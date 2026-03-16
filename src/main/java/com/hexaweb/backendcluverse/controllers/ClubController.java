@@ -1,0 +1,53 @@
+package com.hexaweb.backendcluverse.controllers;
+
+import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.services.ClubService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/clubs")
+@RequiredArgsConstructor
+public class ClubController {
+
+    private final ClubService clubService;
+
+    @GetMapping
+    public List<Club> getAll() {
+        return clubService.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public Club getById(@PathVariable Long id) {
+        return clubService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    @PostMapping
+    public Club create(@RequestBody Club club) {
+        return clubService.save(club);
+    }
+
+    @PutMapping("/{id}")
+    public Club update(@PathVariable Long id, @RequestBody Club club) {
+        club.setId(id);
+        return clubService.save(club);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        clubService.deleteById(id);
+    }
+}
+
