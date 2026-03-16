@@ -2,6 +2,7 @@ package com.hexaweb.backendcluverse.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -34,9 +35,8 @@ public class Position {
     private int maxCandidates;
     private boolean isElectable;
 
-    private Long clubId;
+
     private boolean isAutoRenew;
-    private Long currentHolderId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "current_holder_id", nullable = false)

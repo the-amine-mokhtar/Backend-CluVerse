@@ -1,7 +1,7 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.entities.Reservation;
-import com.hexaweb.backendcluverse.services.ReservationLogisticsService;
+import com.hexaweb.backendcluverse.services.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReservationController {
 
-    private final ReservationLogisticsService reservationService;
+    private final ReservationService reservationService;
 
     @GetMapping
     public List<Reservation> getAll() {

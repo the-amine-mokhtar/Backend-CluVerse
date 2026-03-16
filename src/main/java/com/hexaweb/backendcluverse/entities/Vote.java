@@ -25,11 +25,6 @@ public class Vote {
     private Long id;
 
     private LocalDateTime timestamp;
-
-    private Long electionId;
-    private Long positionId;
-    private Long voterId;
-
     private boolean isValid;
     private int voteWeight;
 
