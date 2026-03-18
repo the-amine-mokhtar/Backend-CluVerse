@@ -63,6 +63,8 @@ public class CandidateService extends EntityServiceImpl<Candidate, Long> {
         candidate.setStatus(CandidateStatus.PENDING);
         candidate.setSubmissionDate(LocalDateTime.now());
 
-        return candidateRepository.save(candidate);
+        Candidate saved = candidateRepository.save(candidate);
+        candidateRepository.flush();
+        return saved;
     }
 }

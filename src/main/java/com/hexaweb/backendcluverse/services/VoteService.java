@@ -2,10 +2,11 @@ package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.VoteRequest;
 import com.hexaweb.backendcluverse.entities.Candidate;
+import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.entities.Vote;
 import com.hexaweb.backendcluverse.repositories.CandidateRepository;
-import com.hexaweb.backendcluverse.repositories.ElectionRepository;
 import com.hexaweb.backendcluverse.repositories.VoteRepository;
+import com.hexaweb.backendcluverse.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,14 +17,14 @@ public class VoteService extends EntityServiceImpl<Vote, Long> {
 
     private final VoteRepository voteRepository;
     private final CandidateRepository candidateRepository;
-    private final ElectionRepository electionRepository;
+    private final UserRepository userRepository;
 
     public VoteService(VoteRepository repository, CandidateRepository candidateRepository,
-                       ElectionRepository electionRepository) {
+                       UserRepository userRepository) {
         super(repository);
         this.voteRepository = repository;
         this.candidateRepository = candidateRepository;
-        this.electionRepository = electionRepository;
+        this.userRepository = userRepository;
     }
 
     public List<Vote> findByElectionId(Long electionId) {
@@ -43,12 +44,20 @@ public class VoteService extends EntityServiceImpl<Vote, Long> {
             throw new RuntimeException("Candidate does not belong to the specified election");
         }
 
+        User voter = userRepository.findById(voterId)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + voterId));
+
         Vote vote = new Vote();
         vote.setCandidate(candidate);
+        vote.setVoter(voter);
+        vote.setElection(candidate.getElection());
+        vote.setPosition(candidate.getPosition());
         vote.setTimestamp(LocalDateTime.now());
         vote.setValid(true);
         vote.setVoteWeight(1);
 
-        return voteRepository.save(vote);
+        Vote saved = voteRepository.save(vote);
+        voteRepository.flush();
+        return saved;
     }
 }

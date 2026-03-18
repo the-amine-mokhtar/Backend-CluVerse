@@ -56,11 +56,10 @@ public class ClubController {
 
     @GetMapping("/names")
     public List<String> getAllClubsNames() {
-        // Suppose que clubService.findAll() retourne List<Club>
         return clubService.findAll()
-                .stream()                 // Stream sur les clubs
-                .map(Club::getName)       // Récupère uniquement le nom
-                .collect(Collectors.toList()); // Retourne List<String>
+                .stream()  
+                .map(Club::getName)  
+                .collect(Collectors.toList());
     }
 
     @PostMapping("/{clubId}/members/{userId}")

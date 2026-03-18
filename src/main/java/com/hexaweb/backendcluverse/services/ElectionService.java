@@ -2,6 +2,7 @@ package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.ElectionRequest;
 import com.hexaweb.backendcluverse.entities.Election;
+import com.hexaweb.backendcluverse.entities.ElectionStatus;
 import com.hexaweb.backendcluverse.entities.Position;
 import com.hexaweb.backendcluverse.repositories.ElectionRepository;
 import com.hexaweb.backendcluverse.repositories.PositionRepository;
@@ -33,6 +34,14 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
             throw new RuntimeException("Position does not belong to the specified club");
         }
 
+        boolean existsActive = electionRepository.existsByPositionIdAndStatusIn(
+                req.getPositionId(),
+                List.of(ElectionStatus.DRAFT, ElectionStatus.OPEN)
+        );
+        if (existsActive) {
+            throw new RuntimeException("This position already has an active or draft election ongoing");
+        }
+
         Election election = new Election();
         election.setTitle(req.getTitle());
         election.setDescription(req.getDescription());
@@ -41,7 +50,9 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
         election.setStatus(req.getStatus());
         election.setPosition(position);
 
-        return electionRepository.save(election);
+        Election saved = electionRepository.save(election);
+        electionRepository.flush();
+        return saved;
     }
 
     public Election updateElection(Long id, ElectionRequest req) {
@@ -54,6 +65,8 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
         if (req.getEndDate() != null) election.setEndDate(req.getEndDate());
         if (req.getStatus() != null) election.setStatus(req.getStatus());
 
-        return electionRepository.save(election);
+        Election saved = electionRepository.save(election);
+        electionRepository.flush();
+        return saved;
     }
 }
