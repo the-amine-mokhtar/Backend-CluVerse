@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/clubs")
@@ -48,6 +49,15 @@ public class ClubController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         clubService.deleteById(id);
+    }
+
+    @GetMapping("/names")
+    public List<String> getAllClubsNames() {
+        // Suppose que clubService.findAll() retourne List<Club>
+        return clubService.findAll()
+                .stream()                 // Stream sur les clubs
+                .map(Club::getName)       // Récupère uniquement le nom
+                .collect(Collectors.toList()); // Retourne List<String>
     }
 }
 
