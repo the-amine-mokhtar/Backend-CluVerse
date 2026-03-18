@@ -32,6 +32,8 @@ public class Club {
     private LocalDate creationDate;
     private String email;
     private String status;
+    private String logoUrl;
+    private Boolean isClubVerified;
 
     @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
