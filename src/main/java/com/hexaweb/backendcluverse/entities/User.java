@@ -32,6 +32,7 @@ public class User {
     private String password;
     private String phone;
     private String photoUrl;
+    private boolean isSuperAdmin = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
