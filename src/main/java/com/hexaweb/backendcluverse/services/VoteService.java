@@ -1,13 +1,54 @@
 package com.hexaweb.backendcluverse.services;
 
+import com.hexaweb.backendcluverse.dto.VoteRequest;
+import com.hexaweb.backendcluverse.entities.Candidate;
 import com.hexaweb.backendcluverse.entities.Vote;
+import com.hexaweb.backendcluverse.repositories.CandidateRepository;
+import com.hexaweb.backendcluverse.repositories.ElectionRepository;
 import com.hexaweb.backendcluverse.repositories.VoteRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Service
 public class VoteService extends EntityServiceImpl<Vote, Long> {
-    public VoteService(VoteRepository repository) {
+
+    private final VoteRepository voteRepository;
+    private final CandidateRepository candidateRepository;
+    private final ElectionRepository electionRepository;
+
+    public VoteService(VoteRepository repository, CandidateRepository candidateRepository,
+                       ElectionRepository electionRepository) {
         super(repository);
+        this.voteRepository = repository;
+        this.candidateRepository = candidateRepository;
+        this.electionRepository = electionRepository;
+    }
+
+    public List<Vote> findByElectionId(Long electionId) {
+        return voteRepository.findByElectionId(electionId);
+    }
+
+    public Vote castVote(VoteRequest req, Long voterId) {
+        boolean alreadyVoted = voteRepository.existsByVoterIdAndElectionId(voterId, req.getElectionId());
+        if (alreadyVoted) {
+            throw new RuntimeException("You have already voted in this election");
+        }
+
+        Candidate candidate = candidateRepository.findById(req.getCandidateId())
+                .orElseThrow(() -> new RuntimeException("Candidate not found with id: " + req.getCandidateId()));
+
+        if (!candidate.getElection().getId().equals(req.getElectionId())) {
+            throw new RuntimeException("Candidate does not belong to the specified election");
+        }
+
+        Vote vote = new Vote();
+        vote.setCandidate(candidate);
+        vote.setTimestamp(LocalDateTime.now());
+        vote.setValid(true);
+        vote.setVoteWeight(1);
+
+        return voteRepository.save(vote);
     }
 }
-

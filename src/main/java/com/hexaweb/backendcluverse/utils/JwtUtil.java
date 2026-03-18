@@ -33,4 +33,35 @@ public class JwtUtil {
                 .verify(token)
                 .getSubject();
     }
+
+    public com.auth0.jwt.interfaces.DecodedJWT extractDecodedJWT(String token) throws JWTVerificationException {
+        return JWT.require(Algorithm.HMAC512(SECRET.getBytes()))
+                .build()
+                .verify(token);
+    }
+
+    public Long extractUserId(String token) {
+        String subject = extractDecodedJWT(token).getSubject();
+        return Long.parseLong(subject);
+    }
+
+    public Long extractClubId(String token) {
+        return extractDecodedJWT(token).getClaim("clubid").asLong();
+    }
+
+    public String extractRole(String token) {
+        return extractDecodedJWT(token).getClaim("role").asString();
+    }
+
+    public boolean extractIsSuperAdmin(String token) {
+        Boolean val = extractDecodedJWT(token).getClaim("isSuperAdmin").asBoolean();
+        return val != null && val;
+    }
+
+    public String resolveBearerToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new com.auth0.jwt.exceptions.JWTVerificationException("Missing or invalid Authorization header");
+        }
+        return authHeader.substring(7);
+    }
 }
