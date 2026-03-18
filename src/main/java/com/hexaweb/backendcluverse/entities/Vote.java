@@ -1,5 +1,7 @@
 package com.hexaweb.backendcluverse.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -19,6 +21,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Vote {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,19 +32,21 @@ public class Vote {
     private int voteWeight;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "election_id", insertable = false, updatable = false)
+    @JoinColumn(name = "election_id")
+    @JsonIgnore
     private Election election;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "position_id", insertable = false, updatable = false)
+    @JoinColumn(name = "position_id")
+    @JsonIgnore
     private Position position;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "voter_id", insertable = false, updatable = false)
+    @JoinColumn(name = "voter_id")
+    @JsonIgnore
     private User voter;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "candidate_id", nullable = false)
     private Candidate candidate;
 }
-
