@@ -69,7 +69,7 @@ public class AuthService {
         membership.setActive(true);
         membershipRepository.save(membership);
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user, club.getId(), membership.getRole().name(), user.getFirstName(), user.getLastName());
         return new AuthResponse(token, user.getEmail());
     }
 
@@ -101,14 +101,12 @@ public class AuthService {
             throw new RuntimeException("Invalid email or password");
         }
 
-        boolean belongsToClub = user.getMemberships().stream()
-                .anyMatch(m -> m.getClub().getId().equals(request.getClubId()) && m.isActive());
+        Membership activeMembership = user.getMemberships().stream()
+                .filter(m -> m.getClub().getId().equals(request.getClubId()) && m.isActive())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User does not have an active membership in the selected club"));
 
-        if (!belongsToClub) {
-             throw new RuntimeException("User does not have an active membership in the selected club");
-        }
-
-        String token = jwtUtil.generateToken(user.getEmail());
+        String token = jwtUtil.generateToken(user, activeMembership.getClub().getId(), activeMembership.getRole().name(), user.getFirstName(), user.getLastName());
         return new AuthResponse(token, user.getEmail());
     }
 }
