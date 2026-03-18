@@ -11,7 +11,7 @@ import java.util.Date;
 public class JwtUtil {
 
     private final String SECRET = "hexaweb_7ell_el_beb_2026";
-    private final long EXPIRATION_TIME = 864_000_000; // 10 days
+    private final long EXPIRATION_TIME = 864_000_000;
 
     public String generateToken(String email) {
         return JWT.create()

@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import com.hexaweb.backendcluverse.dto.MembershipDto;
+import com.hexaweb.backendcluverse.entities.RoleType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,6 +61,13 @@ public class ClubController {
                 .stream()                 // Stream sur les clubs
                 .map(Club::getName)       // Récupère uniquement le nom
                 .collect(Collectors.toList()); // Retourne List<String>
+    }
+
+    @PostMapping("/{clubId}/members/{userId}")
+    public MembershipDto addMember(@PathVariable Long clubId, 
+                                   @PathVariable Long userId, 
+                                   @RequestParam(required = false, defaultValue = "MEMBER") RoleType role) {
+        return clubService.addMember(clubId, userId, role);
     }
 }
 
