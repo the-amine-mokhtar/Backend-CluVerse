@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.Transaction;
+import com.hexaweb.backendcluverse.entities.finance.Transaction;
 import com.hexaweb.backendcluverse.repositories.TransactionRepository;
 import org.springframework.stereotype.Service;
 

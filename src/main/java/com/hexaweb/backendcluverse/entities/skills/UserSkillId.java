@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.skills;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;

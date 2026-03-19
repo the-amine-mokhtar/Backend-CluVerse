@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.entities.Reservation;
+import com.hexaweb.backendcluverse.entities.event.Reservation;
 import com.hexaweb.backendcluverse.services.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

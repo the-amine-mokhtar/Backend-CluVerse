@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.skills;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
@@ -21,17 +21,17 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Sponsor {
+public class Skill {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    private String contactEmail;
-    private String phone;
+    private String description;
+    private String imageUrl;
 
-    @OneToMany(mappedBy = "sponsor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "skill", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<Sponsorship> sponsorships = new ArrayList<>();
+    private List<UserSkill> userSkills = new ArrayList<>();
 }
 

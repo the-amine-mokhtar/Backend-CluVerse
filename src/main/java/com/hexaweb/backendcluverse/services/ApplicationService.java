@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.Application;
+import com.hexaweb.backendcluverse.entities.recruitement.Application;
 import com.hexaweb.backendcluverse.repositories.ApplicationRepository;
 import org.springframework.stereotype.Service;
 

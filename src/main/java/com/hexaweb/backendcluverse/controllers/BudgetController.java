@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.entities.Budget;
+import com.hexaweb.backendcluverse.entities.finance.Budget;
 import com.hexaweb.backendcluverse.services.BudgetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -2,6 +2,13 @@ package com.hexaweb.backendcluverse.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.hexaweb.backendcluverse.entities.election.Position;
+import com.hexaweb.backendcluverse.entities.event.Event;
+import com.hexaweb.backendcluverse.entities.finance.Budget;
+import com.hexaweb.backendcluverse.entities.finance.Transaction;
+import com.hexaweb.backendcluverse.entities.logistics.Resource;
+import com.hexaweb.backendcluverse.entities.recruitement.RecruitmentCampaign;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -15,6 +22,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +44,10 @@ public class Club {
     private String status;
     private String logoUrl;
     private Boolean isClubVerified;
+
+    private String activationCode;
+    private String temporaryPassword;
+    private LocalDateTime activationExpiresAt;
 
     @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore

@@ -1,9 +1,9 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.ElectionRequest;
-import com.hexaweb.backendcluverse.entities.Election;
-import com.hexaweb.backendcluverse.entities.ElectionStatus;
-import com.hexaweb.backendcluverse.entities.Position;
+import com.hexaweb.backendcluverse.entities.election.Election;
+import com.hexaweb.backendcluverse.enumerations.ElectionStatus;
+import com.hexaweb.backendcluverse.entities.election.Position;
 import com.hexaweb.backendcluverse.repositories.ElectionRepository;
 import com.hexaweb.backendcluverse.repositories.PositionRepository;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.Reservation;
+import com.hexaweb.backendcluverse.entities.event.Reservation;
 import com.hexaweb.backendcluverse.repositories.ReservationRepository;
 import org.springframework.stereotype.Service;
 

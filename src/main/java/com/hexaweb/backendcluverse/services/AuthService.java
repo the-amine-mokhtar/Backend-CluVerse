@@ -7,7 +7,7 @@ import com.hexaweb.backendcluverse.dto.MembershipDto;
 import com.hexaweb.backendcluverse.dto.SignupRequest;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Membership;
-import com.hexaweb.backendcluverse.entities.RoleType;
+import com.hexaweb.backendcluverse.enumerations.RoleType;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.MembershipRepository;

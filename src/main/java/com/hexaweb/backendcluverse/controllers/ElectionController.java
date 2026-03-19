@@ -2,7 +2,7 @@ package com.hexaweb.backendcluverse.controllers;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.hexaweb.backendcluverse.dto.ElectionRequest;
-import com.hexaweb.backendcluverse.entities.Election;
+import com.hexaweb.backendcluverse.entities.election.Election;
 import com.hexaweb.backendcluverse.services.ElectionService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;

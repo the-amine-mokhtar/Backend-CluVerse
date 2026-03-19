@@ -2,7 +2,7 @@ package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.PositionRequest;
 import com.hexaweb.backendcluverse.entities.Club;
-import com.hexaweb.backendcluverse.entities.Position;
+import com.hexaweb.backendcluverse.entities.election.Position;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.PositionRepository;

@@ -2,7 +2,7 @@ package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Membership;
-import com.hexaweb.backendcluverse.entities.RoleType;
+import com.hexaweb.backendcluverse.enumerations.RoleType;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.dto.MembershipDto;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
@@ -19,6 +19,11 @@ public class ClubService extends EntityServiceImpl<Club, Long> {
     private final UserRepository userRepository;
     private final MembershipRepository membershipRepository;
     private final ClubRepository clubRepository;
+
+
+    public Club save(Club club) {
+        return clubRepository.save(club);
+    }
 
     @Autowired
     public ClubService(ClubRepository repository, UserRepository userRepository, MembershipRepository membershipRepository) {

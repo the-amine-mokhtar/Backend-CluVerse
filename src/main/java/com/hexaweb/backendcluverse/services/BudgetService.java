@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.Budget;
+import com.hexaweb.backendcluverse.entities.finance.Budget;
 import com.hexaweb.backendcluverse.repositories.BudgetRepository;
 import org.springframework.stereotype.Service;
 

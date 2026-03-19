@@ -1,8 +1,9 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.election;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.CascadeType;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.enumerations.CandidateStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,15 +13,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -28,29 +26,32 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Election {
+public class Candidate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title;
-    private String description;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private String program;
 
     @Enumerated(EnumType.STRING)
-    private ElectionStatus status;
+    private CandidateStatus status;
+
+    private LocalDateTime submissionDate;
+    private LocalDateTime withdrawalDate;
+    private String aiCritique;
+    private String bio;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "position_id", nullable = false)
     private Position position;
 
-    @OneToMany(mappedBy = "election", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Candidate> candidates = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "election_id", nullable = false)
+    private Election election;
 
-    @OneToMany(mappedBy = "election", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
-    private List<Vote> votes = new ArrayList<>();
+    private User user;
 }
 

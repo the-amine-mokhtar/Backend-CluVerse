@@ -1,5 +1,6 @@
 package com.hexaweb.backendcluverse.entities;
 
+import com.hexaweb.backendcluverse.enumerations.RoleType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;

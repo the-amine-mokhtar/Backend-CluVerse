@@ -1,7 +1,8 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.election;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.hexaweb.backendcluverse.entities.User;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;

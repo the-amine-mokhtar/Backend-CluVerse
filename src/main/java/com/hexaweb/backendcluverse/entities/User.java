@@ -1,6 +1,11 @@
 package com.hexaweb.backendcluverse.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hexaweb.backendcluverse.entities.election.Candidate;
+import com.hexaweb.backendcluverse.entities.election.Vote;
+import com.hexaweb.backendcluverse.entities.recruitement.Application;
+import com.hexaweb.backendcluverse.entities.event.EventParticipant;
+import com.hexaweb.backendcluverse.entities.skills.UserSkill;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

@@ -1,7 +1,7 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.recruitement;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,40 +16,31 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Candidate {
+public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String program;
+    private String motivationLetter;
 
     @Enumerated(EnumType.STRING)
-    private CandidateStatus status;
+    private ApplicationStatus status;
 
-    private LocalDateTime submissionDate;
-    private LocalDateTime withdrawalDate;
-    private String aiCritique;
-    private String bio;
+    private LocalDate submissionDate;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "position_id", nullable = false)
-    private Position position;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "election_id", nullable = false)
-    private Election election;
+    @JoinColumn(name = "recruitment_campaign_id", nullable = false)
+    private RecruitmentCampaign recruitmentCampaign;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
     private User user;
 }
 

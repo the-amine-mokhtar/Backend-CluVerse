@@ -1,7 +1,7 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.entities.UserSkill;
-import com.hexaweb.backendcluverse.entities.UserSkillId;
+import com.hexaweb.backendcluverse.entities.skills.UserSkill;
+import com.hexaweb.backendcluverse.entities.skills.UserSkillId;
 import com.hexaweb.backendcluverse.services.UserSkillService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

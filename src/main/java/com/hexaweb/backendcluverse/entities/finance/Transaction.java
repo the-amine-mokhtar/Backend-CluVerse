@@ -1,5 +1,7 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.finance;
 
+import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.enumerations.TransactionType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

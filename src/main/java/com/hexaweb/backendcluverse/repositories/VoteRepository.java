@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.repositories;
 
-import com.hexaweb.backendcluverse.entities.Vote;
+import com.hexaweb.backendcluverse.entities.election.Vote;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

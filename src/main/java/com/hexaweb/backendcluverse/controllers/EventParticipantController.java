@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.entities.EventParticipant;
+import com.hexaweb.backendcluverse.entities.event.EventParticipant;
 import com.hexaweb.backendcluverse.services.EventParticipantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

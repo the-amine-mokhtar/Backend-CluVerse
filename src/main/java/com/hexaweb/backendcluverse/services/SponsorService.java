@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.Sponsor;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.repositories.SponsorRepository;
 import org.springframework.stereotype.Service;
 

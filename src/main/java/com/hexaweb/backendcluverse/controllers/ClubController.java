@@ -2,6 +2,7 @@ package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.services.ClubService;
+import com.hexaweb.backendcluverse.services.VerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import com.hexaweb.backendcluverse.dto.MembershipDto;
-import com.hexaweb.backendcluverse.entities.RoleType;
+import com.hexaweb.backendcluverse.enumerations.RoleType;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,6 +27,8 @@ import java.util.stream.Collectors;
 public class ClubController {
 
     private final ClubService clubService;
+    private final VerificationService verificationService;
+
 
     @GetMapping
     public List<Club> getAll() {
@@ -40,7 +43,9 @@ public class ClubController {
 
     @PostMapping
     public Club create(@RequestBody Club club) {
-        return clubService.save(club);
+        Club saved = clubService.save(club);
+        verificationService.sendActivationEmail(saved);
+        return saved;
     }
 
     @PutMapping("/{id}")

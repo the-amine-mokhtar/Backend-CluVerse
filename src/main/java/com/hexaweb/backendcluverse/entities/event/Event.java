@@ -1,6 +1,9 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
+import com.hexaweb.backendcluverse.enumerations.EventStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

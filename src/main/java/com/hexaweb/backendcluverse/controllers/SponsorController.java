@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.entities.Sponsor;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.services.SponsorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

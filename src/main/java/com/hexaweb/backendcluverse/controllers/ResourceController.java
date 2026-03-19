@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.entities.Resource;
+import com.hexaweb.backendcluverse.entities.logistics.Resource;
 import com.hexaweb.backendcluverse.services.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

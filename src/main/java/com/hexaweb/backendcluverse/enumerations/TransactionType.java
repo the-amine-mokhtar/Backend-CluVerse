@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.enumerations;
 
 public enum TransactionType {
     INCOME,

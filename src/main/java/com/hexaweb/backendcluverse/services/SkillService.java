@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.Skill;
+import com.hexaweb.backendcluverse.entities.skills.Skill;
 import com.hexaweb.backendcluverse.repositories.SkillRepository;
 import org.springframework.stereotype.Service;
 

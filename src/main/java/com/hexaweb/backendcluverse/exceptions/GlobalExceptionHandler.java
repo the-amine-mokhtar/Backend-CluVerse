@@ -20,6 +20,7 @@ public class GlobalExceptionHandler {
         body.put("status", ex.getStatusCode().value());
         body.put("error", ((HttpStatus) ex.getStatusCode()).getReasonPhrase());
         body.put("message", ex.getReason());
+        ex.printStackTrace();
         return new ResponseEntity<>(body, ex.getStatusCode());
     }
 
@@ -30,6 +31,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Bad Request");
         body.put("message", ex.getMessage());
+        ex.printStackTrace();
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }

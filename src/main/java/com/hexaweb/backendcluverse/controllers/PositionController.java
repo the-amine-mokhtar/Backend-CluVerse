@@ -2,7 +2,7 @@ package com.hexaweb.backendcluverse.controllers;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.hexaweb.backendcluverse.dto.PositionRequest;
-import com.hexaweb.backendcluverse.entities.Position;
+import com.hexaweb.backendcluverse.entities.election.Position;
 import com.hexaweb.backendcluverse.services.PositionService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;

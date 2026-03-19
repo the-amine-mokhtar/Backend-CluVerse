@@ -1,10 +1,10 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.CandidateRequest;
-import com.hexaweb.backendcluverse.entities.Candidate;
-import com.hexaweb.backendcluverse.entities.CandidateStatus;
-import com.hexaweb.backendcluverse.entities.Election;
-import com.hexaweb.backendcluverse.entities.Position;
+import com.hexaweb.backendcluverse.entities.election.Candidate;
+import com.hexaweb.backendcluverse.enumerations.CandidateStatus;
+import com.hexaweb.backendcluverse.entities.election.Election;
+import com.hexaweb.backendcluverse.entities.election.Position;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.repositories.CandidateRepository;
 import com.hexaweb.backendcluverse.repositories.ElectionRepository;

@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.dto;
 
-import com.hexaweb.backendcluverse.entities.ElectionStatus;
+import com.hexaweb.backendcluverse.enumerations.ElectionStatus;
 import lombok.Getter;
 import lombok.Setter;
 

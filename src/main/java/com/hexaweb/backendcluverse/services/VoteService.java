@@ -1,9 +1,9 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.VoteRequest;
-import com.hexaweb.backendcluverse.entities.Candidate;
+import com.hexaweb.backendcluverse.entities.election.Candidate;
 import com.hexaweb.backendcluverse.entities.User;
-import com.hexaweb.backendcluverse.entities.Vote;
+import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.repositories.CandidateRepository;
 import com.hexaweb.backendcluverse.repositories.VoteRepository;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
