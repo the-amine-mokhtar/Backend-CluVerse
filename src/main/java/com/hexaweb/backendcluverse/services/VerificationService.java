@@ -28,10 +28,11 @@ public class VerificationService {
     @Value("${spring.mail.username}")
     private String fromAddress;
 
-    private String generateActivationCode() {
-        return UUID.randomUUID().toString();
+    private String generateConnectionIdentifier(String clubName) {
+        String digits = String.valueOf((int)(Math.random() * 900) + 100);
+        String clubUpper = clubName.toUpperCase().replaceAll("\\s+", "");
+        return digits + clubUpper + digits;
     }
-
     private String generateTemporaryPassword() {
         String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
         SecureRandom random = new SecureRandom();
@@ -43,8 +44,7 @@ public class VerificationService {
     }
 
     public void sendActivationEmail(Club club) {
-        String activationCode = generateActivationCode();
-        String temporaryPassword = generateTemporaryPassword();
+        String activationCode = generateConnectionIdentifier(club.getName());        String temporaryPassword = generateTemporaryPassword();
 
         club.setActivationCode(activationCode);
         club.setTemporaryPassword(temporaryPassword);
@@ -57,7 +57,7 @@ public class VerificationService {
         mail.setText(
                 "Bonjour,\n\n" +
                         "Voici vos identifiants de connexion :\n\n" +
-                        "Code : " + activationCode + "\n" +
+                        "Identifiant de connexion : " + activationCode + "\n" +
                         "Mot de passe : " + temporaryPassword + "\n\n" +
                         "Cliquez ici pour activer votre compte :\n" +
                         baseUrl + "/verify?code=" + activationCode + "\n\n" +

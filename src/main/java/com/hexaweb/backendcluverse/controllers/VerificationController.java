@@ -44,6 +44,7 @@ public class VerificationController {
         president.setFirstName("President");
         president.setLastName(club.getName());
         president.setPassword(BCrypt.hashpw(club.getTemporaryPassword(), BCrypt.gensalt()));
+        president.setConnectionIdentifier(club.getActivationCode());
         userRepository.save(president);
 
         Membership membership = new Membership();
