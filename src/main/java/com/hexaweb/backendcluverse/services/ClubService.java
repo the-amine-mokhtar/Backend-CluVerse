@@ -54,5 +54,9 @@ public class ClubService extends EntityServiceImpl<Club, Long> {
         dto.setActive(membership.isActive());
         return dto;
     }
+
+    public boolean existsByEmail(String email) {
+        return clubRepository.existsByEmail(email);
+    }
 }
 

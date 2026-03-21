@@ -92,5 +92,11 @@ public class ClubController {
 
         return ResponseEntity.ok(logoUrl);
     }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmail(@RequestParam String email) {
+        boolean exists = clubService.existsByEmail(email);
+        return ResponseEntity.ok(exists);
+    }
 }
 
