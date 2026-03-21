@@ -1,10 +1,13 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.services.CloudinaryService;
 import com.hexaweb.backendcluverse.services.ClubService;
 import com.hexaweb.backendcluverse.services.VerificationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,10 +17,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import com.hexaweb.backendcluverse.dto.MembershipDto;
 import com.hexaweb.backendcluverse.enumerations.RoleType;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +33,8 @@ public class ClubController {
 
     private final ClubService clubService;
     private final VerificationService verificationService;
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
 
     @GetMapping
@@ -72,6 +79,18 @@ public class ClubController {
                                    @PathVariable Long userId, 
                                    @RequestParam(required = false, defaultValue = "MEMBER") RoleType role) {
         return clubService.addMember(clubId, userId, role);
+    }
+
+    @PostMapping("/{id}/logo")
+    public ResponseEntity<String> uploadLogo(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
+        Club club = clubService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        String logoUrl = cloudinaryService.uploadLogo(file);
+        club.setLogoUrl(logoUrl);
+        clubService.save(club);
+
+        return ResponseEntity.ok(logoUrl);
     }
 }
 
