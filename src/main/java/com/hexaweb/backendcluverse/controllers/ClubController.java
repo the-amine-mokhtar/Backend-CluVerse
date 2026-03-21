@@ -178,6 +178,17 @@ public class ClubController {
         return ResponseEntity.ok("Member activated successfully");
     }
 
+    @PutMapping("/{clubId}/members/{userId}/role")
+    public ResponseEntity<String> updateMemberRole(@PathVariable Long clubId,
+                                                   @PathVariable Long userId,
+                                                   @RequestParam String role) {
+        Membership membership = membershipRepository.findByClubIdAndUserId(clubId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found"));
+        membership.setRole(RoleType.valueOf(role));
+        membershipRepository.save(membership);
+        return ResponseEntity.ok("Role updated successfully");
+    }
+
 
 }
 
