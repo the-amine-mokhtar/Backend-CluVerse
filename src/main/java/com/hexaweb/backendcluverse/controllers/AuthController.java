@@ -1,7 +1,10 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.dto.*;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.services.AuthService;
+import com.hexaweb.backendcluverse.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +16,12 @@ import java.util.List;
 public class AuthController {
 
     private final AuthService authService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     public AuthController(AuthService authService) {
@@ -57,5 +66,20 @@ public class AuthController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(new AuthResponse(null, e.getMessage()));
         }
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(@RequestHeader("Authorization") String authHeader) {
+
+        String token = jwtUtil.resolveBearerToken(authHeader);
+        Long userId = jwtUtil.extractUserId(token);
+        Long clubId = jwtUtil.extractClubId(token);
+        String role = jwtUtil.extractRole(token);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String newToken = jwtUtil.generateToken(user, clubId, role, user.getFirstName(), user.getLastName());
+        return ResponseEntity.ok(new AuthResponse(newToken, user.getEmail()));
     }
 }

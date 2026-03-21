@@ -1,5 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
+import com.hexaweb.backendcluverse.dto.UpdateProfileRequest;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.services.CloudinaryService;
@@ -28,7 +29,7 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private CloudinaryService cloudinaryService;
 
@@ -70,19 +71,26 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<User> updateMe(@RequestHeader("Authorization") String authHeader,
-                                         @RequestBody User updatedUser) {
+    public ResponseEntity<?> updateMe(@RequestHeader("Authorization") String authHeader,
+                                      @RequestBody UpdateProfileRequest request) {
         String token = jwtUtil.resolveBearerToken(authHeader);
         Long userId = jwtUtil.extractUserId(token);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (updatedUser.getFirstName() != null) user.setFirstName(updatedUser.getFirstName());
-        if (updatedUser.getLastName() != null) user.setLastName(updatedUser.getLastName());
-        if (updatedUser.getEmail() != null) user.setEmail(updatedUser.getEmail());
-        if (updatedUser.getPhone() != null) user.setPhone(updatedUser.getPhone());
-        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-            user.setPassword(BCrypt.hashpw(updatedUser.getPassword(), BCrypt.gensalt()));
+        if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+        if (request.getLastName() != null) user.setLastName(request.getLastName());
+        if (request.getEmail() != null) user.setEmail(request.getEmail());
+        if (request.getPhone() != null) user.setPhone(request.getPhone());
+
+        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
+            if (request.getCurrentPassword() == null || request.getCurrentPassword().isEmpty()) {
+                return ResponseEntity.badRequest().body("Current password is required to set a new password");
+            }
+            if (!BCrypt.checkpw(request.getCurrentPassword(), user.getPassword())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Current password is incorrect");
+            }
+            user.setPassword(BCrypt.hashpw(request.getNewPassword(), BCrypt.gensalt()));
         }
 
         userRepository.save(user);
