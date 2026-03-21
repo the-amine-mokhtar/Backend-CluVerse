@@ -158,6 +158,26 @@ public class ClubController {
         return ResponseEntity.ok("Member removed successfully");
     }
 
+    @PutMapping("/{clubId}/members/{userId}/deactivate")
+    public ResponseEntity<String> deactivateMember(@PathVariable Long clubId,
+                                                   @PathVariable Long userId) {
+        Membership membership = membershipRepository.findByClubIdAndUserId(clubId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found"));
+        membership.setActive(false);
+        membershipRepository.save(membership);
+        return ResponseEntity.ok("Member deactivated successfully");
+    }
+
+    @PutMapping("/{clubId}/members/{userId}/activate")
+    public ResponseEntity<String> activateMember(@PathVariable Long clubId,
+                                                 @PathVariable Long userId) {
+        Membership membership = membershipRepository.findByClubIdAndUserId(clubId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found"));
+        membership.setActive(true);
+        membershipRepository.save(membership);
+        return ResponseEntity.ok("Member activated successfully");
+    }
+
 
 }
 
