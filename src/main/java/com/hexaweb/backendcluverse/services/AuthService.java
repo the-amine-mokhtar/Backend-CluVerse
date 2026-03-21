@@ -1,10 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.dto.AuthResponse;
-import com.hexaweb.backendcluverse.dto.LoginClubRequest;
-import com.hexaweb.backendcluverse.dto.LoginRequest;
-import com.hexaweb.backendcluverse.dto.MembershipDto;
-import com.hexaweb.backendcluverse.dto.SignupRequest;
+import com.hexaweb.backendcluverse.dto.*;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Membership;
 import com.hexaweb.backendcluverse.enumerations.RoleType;
@@ -13,6 +9,7 @@ import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.MembershipRepository;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
+import jakarta.transaction.Transactional;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -108,5 +105,26 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user, activeMembership.getClub().getId(), activeMembership.getRole().name(), user.getFirstName(), user.getLastName());
         return new AuthResponse(token, user.getEmail());
+    }
+
+    @Transactional
+    public AuthResponse loginWithIdentifier(MemberLoginRequest request) {
+        User user = userRepository.findByConnectionIdentifier(request.getConnectionIdentifier())
+                .orElseThrow(() -> new RuntimeException("Identifiant ou mot de passe invalide"));
+
+        System.out.println("Memberships count: " + user.getMemberships().size());
+        user.getMemberships().forEach(m -> System.out.println("Club: " + m.getClub().getName() + " | Active: " + m.isActive()));
+
+        if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Identifiant ou mot de passe invalide");
+        }
+
+        Membership activeMembership = user.getMemberships().stream()
+                .filter(m -> m.getClub().getName().equals(request.getClubName()) && m.isActive())
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Aucun membership actif trouvé pour ce club"));
+
+        String token = jwtUtil.generateToken(user, activeMembership.getClub().getId(), activeMembership.getRole().name(), user.getFirstName(), user.getLastName());
+        return new AuthResponse(token, user.getConnectionIdentifier());
     }
 }

@@ -1,10 +1,6 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.hexaweb.backendcluverse.dto.AuthResponse;
-import com.hexaweb.backendcluverse.dto.LoginClubRequest;
-import com.hexaweb.backendcluverse.dto.LoginRequest;
-import com.hexaweb.backendcluverse.dto.MembershipDto;
-import com.hexaweb.backendcluverse.dto.SignupRequest;
+import com.hexaweb.backendcluverse.dto.*;
 import com.hexaweb.backendcluverse.services.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +43,16 @@ public class AuthController {
     public ResponseEntity<AuthResponse> loginWithClub(@RequestBody LoginClubRequest request) {
         try {
             AuthResponse response = authService.loginWithClub(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(new AuthResponse(null, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/login-member")
+    public ResponseEntity<AuthResponse> loginMember(@RequestBody MemberLoginRequest request) {
+        try {
+            AuthResponse response = authService.loginWithIdentifier(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(401).body(new AuthResponse(null, e.getMessage()));
