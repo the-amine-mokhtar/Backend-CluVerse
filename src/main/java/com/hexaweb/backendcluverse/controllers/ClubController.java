@@ -1,6 +1,12 @@
 package com.hexaweb.backendcluverse.controllers;
 
+import com.hexaweb.backendcluverse.dto.InviteMemberRequest;
+import com.hexaweb.backendcluverse.dto.MemberProfileDto;
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.Membership;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.repositories.MembershipRepository;
+import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.services.CloudinaryService;
 import com.hexaweb.backendcluverse.services.ClubService;
 import com.hexaweb.backendcluverse.services.VerificationService;
@@ -35,6 +41,12 @@ public class ClubController {
     private final VerificationService verificationService;
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private MembershipRepository membershipRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
     @GetMapping
@@ -98,5 +110,54 @@ public class ClubController {
         boolean exists = clubService.existsByEmail(email);
         return ResponseEntity.ok(exists);
     }
+
+    @GetMapping("/{clubId}/members")
+    public ResponseEntity<List<MemberProfileDto>> getMembers(@PathVariable Long clubId) {
+        List<Membership> memberships = membershipRepository.findByClubId(clubId);
+        List<MemberProfileDto> members = memberships.stream().map(m -> {
+            MemberProfileDto dto = new MemberProfileDto();
+            dto.setUserId(m.getUser().getId());
+            dto.setFirstName(m.getUser().getFirstName());
+            dto.setLastName(m.getUser().getLastName());
+            dto.setEmail(m.getUser().getEmail());
+            dto.setRole(m.getRole().name());
+            dto.setJoinDate(m.getJoinDate());
+            dto.setActive(m.isActive());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(members);
+    }
+
+
+    @PostMapping("/{clubId}/members/send-invite")
+    public ResponseEntity<?> inviteMember(@PathVariable Long clubId,
+                                          @RequestBody InviteMemberRequest request) {
+        Club club = clubService.findById(clubId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        if (membershipRepository.existsByClubIdAndUserId(clubId,
+                userRepository.findByEmail(request.getEmail())
+                        .map(User::getId).orElse(-1L))) {
+            return ResponseEntity.badRequest().body("User is already a member of this club");
+        }
+
+        verificationService.sendMemberInvitationEmail(request.getEmail(), club, request.getRole());
+        return ResponseEntity.ok("Invitation sent to " + request.getEmail());
+    }
+
+
+    @DeleteMapping("/{clubId}/members/{userId}")
+    public ResponseEntity<?> removeMember(@PathVariable Long clubId,
+                                          @PathVariable Long userId) {
+        Membership membership = membershipRepository.findByClubIdAndUserId(clubId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Membership not found"));
+
+        membershipRepository.delete(membership);
+        userRepository.deleteById(userId);
+
+        return ResponseEntity.ok("Member removed successfully");
+    }
+
+
 }
 
