@@ -1,6 +1,7 @@
 package com.hexaweb.backendcluverse.entities.recruitement;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.Club;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -25,6 +26,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class RecruitmentCampaign {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +37,8 @@ public class RecruitmentCampaign {
     private LocalDate startDate;
     private LocalDate endDate;
     private boolean active;
+    private String PublicLink;
+    private Integer maxCandidates;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
@@ -43,5 +47,9 @@ public class RecruitmentCampaign {
     @OneToMany(mappedBy = "recruitmentCampaign", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Application> applications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<CampaignQuestion> questions = new ArrayList<>();
 }
 
