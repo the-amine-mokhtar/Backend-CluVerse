@@ -11,5 +11,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findByRecruitmentCampaignId(Long campaignId);
     List<Application> findByRecruitmentCampaignIdAndStatus(Long campaignId, ApplicationStatus status);
     boolean existsByRecruitmentCampaignIdAndCandidateEmail(Long campaignId, String email);
+    long countByRecruitmentCampaignId(Long campaignId);
+
 }
 

@@ -3,21 +3,14 @@ package com.hexaweb.backendcluverse.entities.recruitement;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.Club;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,8 +27,13 @@ public class RecruitmentCampaign {
 
     private String title;
     private String description;
+
+    @Column(nullable = false, updatable = false)
     private LocalDate startDate;
+
+    @Column
     private LocalDate endDate;
+
     private boolean active;
     private String publicLink;
     private Integer maxCandidates;
@@ -50,5 +48,10 @@ public class RecruitmentCampaign {
 
     @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CampaignQuestion> questions = new ArrayList<>();
+
+    @PrePersist
+    protected void onCreate() {
+        this.startDate = LocalDate.from(LocalDateTime.now());
+    }
 }
 
