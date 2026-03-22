@@ -32,9 +32,10 @@ public class RecruitmentCampaign {
     private LocalDate startDate;
 
     @Column
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
-    private boolean active;
+    @Column(nullable = false)
+    private boolean active = true;
     private String publicLink;
     private Integer maxCandidates;
 
@@ -52,6 +53,8 @@ public class RecruitmentCampaign {
     @PrePersist
     protected void onCreate() {
         this.startDate = LocalDate.from(LocalDateTime.now());
+        this.active = true;
     }
+
 }
 

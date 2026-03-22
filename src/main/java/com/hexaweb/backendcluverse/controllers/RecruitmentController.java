@@ -3,6 +3,7 @@ package com.hexaweb.backendcluverse.controllers;
 import com.hexaweb.backendcluverse.dto.AnswerDto;
 import com.hexaweb.backendcluverse.dto.ApplicationSubmissionDto;
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.Notification;
 import com.hexaweb.backendcluverse.entities.recruitement.*;
 import com.hexaweb.backendcluverse.repositories.*;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
@@ -20,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,15 +40,19 @@ public class RecruitmentController {
     @Autowired
     private JavaMailSender mailSender;
 
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     @PostMapping("/campaigns")
     public ResponseEntity<?> createCampaign(@RequestBody RecruitmentCampaign campaign, @RequestParam Long clubId) {
-        if (campaign.getEndDate() != null && campaign.getEndDate().isBefore(ChronoLocalDate.from(LocalDateTime.now()))) {
+        if (campaign.getEndDate() != null && campaign.getEndDate().isBefore(LocalDateTime.now())) {
             return ResponseEntity.badRequest().body("La date de fin doit être supérieure à la date de début");
         }
         Club club = clubRepository.findById(clubId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         campaign.setClub(club);
         campaign.setPublicLink(UUID.randomUUID().toString());
+        campaign.setActive(true);
         return ResponseEntity.ok(campaignRepository.save(campaign));
     }
 
@@ -54,7 +60,7 @@ public class RecruitmentController {
     public ResponseEntity<?> updateCampaign(@PathVariable Long id, @RequestBody RecruitmentCampaign updated) {
         RecruitmentCampaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (updated.getEndDate() != null && updated.getEndDate().isBefore(campaign.getStartDate())) {
+        if (updated.getEndDate() != null && updated.getEndDate().isBefore(campaign.getStartDate().atStartOfDay())) {
             return ResponseEntity.badRequest().body("La date de fin doit être supérieure à la date de début");
         }
         campaign.setTitle(updated.getTitle());
@@ -62,6 +68,12 @@ public class RecruitmentController {
         campaign.setEndDate(updated.getEndDate());
         campaign.setActive(updated.isActive());
         campaign.setMaxCandidates(updated.getMaxCandidates());
+        // Ajustement automatique du statut selon endDate
+        if (updated.getEndDate() != null && LocalDateTime.now().isAfter(updated.getEndDate())  ) {
+            campaign.setActive(false);
+        } else {
+            campaign.setActive(true);
+        }
         return ResponseEntity.ok(campaignRepository.save(campaign));
     }
 
@@ -128,7 +140,7 @@ public class RecruitmentController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         // Vérification date expiration
-        if (campaign.getEndDate() != null && LocalDateTime.now().isAfter(campaign.getEndDate().atStartOfDay())) {
+        if (campaign.getEndDate() != null && LocalDateTime.now().isAfter(campaign.getEndDate())) {
             return ResponseEntity.badRequest().body("Cette campagne de recrutement est terminée");
         }
 
@@ -151,7 +163,7 @@ public class RecruitmentController {
         application.setCandidateEmail(submission.getCandidateEmail());
         application.setCandidatePhone(submission.getCandidatePhone());
         application.setStatus(ApplicationStatus.NEW);
-        application.setSubmissionDate(LocalDate.now());
+        application.setSubmissionDate(LocalDateTime.now());
         applicationRepository.save(application);
 
         for (AnswerDto answerDto : submission.getAnswers()) {
@@ -163,7 +175,13 @@ public class RecruitmentController {
             answer.setAnswer(answerDto.getAnswer());
             answerRepository.save(answer);
         }
-
+        Notification notification = new Notification();
+        notification.setClubId(campaign.getClub().getId());
+        notification.setMessage("Nouvelle candidature de " + submission.getCandidateName() + " pour \"" + campaign.getTitle() + "\"");
+        notification.setApplicationId(application.getId());
+        notification.setCandidateName(submission.getCandidateName());
+        notification.setCampaignTitle(campaign.getTitle());
+        notificationRepository.save(notification);
         return ResponseEntity.ok("Application submitted successfully");
     }
 
