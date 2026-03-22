@@ -45,7 +45,7 @@ public class RecruitmentController {
 
     @PostMapping("/campaigns")
     public ResponseEntity<?> createCampaign(@RequestBody RecruitmentCampaign campaign, @RequestParam Long clubId) {
-        if (campaign.getEndDate() != null && campaign.getEndDate().isBefore(LocalDateTime.now())) {
+        if (campaign.getEndDate() != null && campaign.getEndDate().isBefore(LocalDate.now())) {
             return ResponseEntity.badRequest().body("La date de fin doit être supérieure à la date de début");
         }
         Club club = clubRepository.findById(clubId)
@@ -60,20 +60,22 @@ public class RecruitmentController {
     public ResponseEntity<?> updateCampaign(@PathVariable Long id, @RequestBody RecruitmentCampaign updated) {
         RecruitmentCampaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (updated.getEndDate() != null && updated.getEndDate().isBefore(campaign.getStartDate().atStartOfDay())) {
+
+        if (updated.getEndDate() != null && updated.getEndDate().isBefore(campaign.getStartDate())) {
             return ResponseEntity.badRequest().body("La date de fin doit être supérieure à la date de début");
         }
+
         campaign.setTitle(updated.getTitle());
         campaign.setDescription(updated.getDescription());
         campaign.setEndDate(updated.getEndDate());
-        campaign.setActive(updated.isActive());
         campaign.setMaxCandidates(updated.getMaxCandidates());
-        // Ajustement automatique du statut selon endDate
-        if (updated.getEndDate() != null && LocalDateTime.now().isAfter(updated.getEndDate())  ) {
+
+        if (updated.getEndDate() != null && LocalDate.now().isAfter(updated.getEndDate())) {
             campaign.setActive(false);
         } else {
             campaign.setActive(true);
         }
+
         return ResponseEntity.ok(campaignRepository.save(campaign));
     }
 
@@ -140,7 +142,7 @@ public class RecruitmentController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         // Vérification date expiration
-        if (campaign.getEndDate() != null && LocalDateTime.now().isAfter(campaign.getEndDate())) {
+        if (campaign.getEndDate() != null && LocalDate.now().isAfter(campaign.getEndDate())) {
             return ResponseEntity.badRequest().body("Cette campagne de recrutement est terminée");
         }
 

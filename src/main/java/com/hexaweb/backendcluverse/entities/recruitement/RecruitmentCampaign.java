@@ -32,7 +32,7 @@ public class RecruitmentCampaign {
     private LocalDate startDate;
 
     @Column
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     @Column(nullable = false)
     private boolean active = true;
