@@ -42,7 +42,6 @@ public class Application {
     private RecruitmentCampaign recruitmentCampaign;
 
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<ApplicationAnswer> answers = new ArrayList<>();
 
 }

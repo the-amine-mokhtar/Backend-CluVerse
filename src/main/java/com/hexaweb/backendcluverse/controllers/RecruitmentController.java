@@ -6,6 +6,7 @@ import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.recruitement.*;
 import com.hexaweb.backendcluverse.repositories.*;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -99,8 +100,14 @@ public class RecruitmentController {
     }
 
     @DeleteMapping("/questions/{id}")
+    @Transactional
     public ResponseEntity<String> deleteQuestion(@PathVariable Long id) {
-        questionRepository.deleteById(id);
+        CampaignQuestion question = questionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        answerRepository.deleteByQuestionId(id);
+        questionRepository.delete(question);
+
         return ResponseEntity.ok("Question deleted successfully");
     }
 
@@ -149,5 +156,13 @@ public class RecruitmentController {
         application.setStatus(status);
         applicationRepository.save(application);
         return ResponseEntity.ok("Status updated successfully");
+    }
+
+    @GetMapping("/campaigns/public/{publicLink}")
+    public ResponseEntity<?> getCampaignByPublicLink(@PathVariable String publicLink) {
+        RecruitmentCampaign campaign = campaignRepository.findByPublicLink(publicLink)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Campaign not found"));
+
+        return ResponseEntity.ok(campaign);
     }
 }

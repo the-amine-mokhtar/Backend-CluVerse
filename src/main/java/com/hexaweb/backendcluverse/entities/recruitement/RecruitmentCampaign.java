@@ -37,7 +37,7 @@ public class RecruitmentCampaign {
     private LocalDate startDate;
     private LocalDate endDate;
     private boolean active;
-    private String PublicLink;
+    private String publicLink;
     private Integer maxCandidates;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -49,7 +49,6 @@ public class RecruitmentCampaign {
     private List<Application> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
     private List<CampaignQuestion> questions = new ArrayList<>();
 }
 
