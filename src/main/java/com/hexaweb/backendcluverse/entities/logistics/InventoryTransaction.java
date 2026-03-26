@@ -1,10 +1,8 @@
-package com.hexaweb.backendcluverse.entities.event;
+package com.hexaweb.backendcluverse.entities.logistics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.hexaweb.backendcluverse.entities.User;
-import com.hexaweb.backendcluverse.entities.logistics.Resource;
-import com.hexaweb.backendcluverse.enumerations.ReservationStatus;
+import com.hexaweb.backendcluverse.enumerations.InventoryTransactionType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -27,32 +25,20 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Reservation {
+public class InventoryTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
-
     @Enumerated(EnumType.STRING)
-    private ReservationStatus status;
+    private InventoryTransactionType type;
     
-    private int quantityReserved;
-    private String notes;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id", nullable = false)
-    @JsonIgnore
-    private Event event;
+    private int quantity;
+    private LocalDateTime date;
+    private String reason;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "resource_id", nullable = false)
     @JsonIgnore
     private Resource resource;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore
-    private User user;
 }
