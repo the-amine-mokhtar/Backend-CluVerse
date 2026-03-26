@@ -1,7 +1,13 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.Membership;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.enumerations.RoleType;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
+import com.hexaweb.backendcluverse.repositories.MembershipRepository;
+import com.hexaweb.backendcluverse.repositories.UserRepository;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
@@ -9,6 +15,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -21,6 +28,12 @@ public class VerificationService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private MembershipRepository membershipRepository;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -62,6 +75,42 @@ public class VerificationService {
                         "Cliquez ici pour activer votre compte :\n" +
                         baseUrl + "/verify?code=" + activationCode + "\n\n" +
                         "Ce lien expire dans 24h."
+        );
+        mailSender.send(mail);
+    }
+
+
+    public void sendMemberInvitationEmail(String email, Club club, String role) {
+        String tempPassword = generateTemporaryPassword();
+        String connectionIdentifier = generateConnectionIdentifier(club.getName());
+
+        User user = new User();
+        user.setEmail(email);
+        user.setFirstName("Member");
+        user.setLastName(club.getName());
+        user.setPassword(BCrypt.hashpw(tempPassword, BCrypt.gensalt()));
+        user.setConnectionIdentifier(connectionIdentifier);
+        userRepository.save(user);
+
+        Membership membership = new Membership();
+        membership.setUser(user);
+        membership.setClub(club);
+        membership.setRole(RoleType.valueOf(role));
+        membership.setJoinDate(LocalDate.now());
+        membership.setActive(true);
+        membershipRepository.save(membership);
+
+        SimpleMailMessage mail = new SimpleMailMessage();
+        mail.setFrom(fromAddress);
+        mail.setTo(email);
+        mail.setSubject("Invitation to join " + club.getName() + " on Cluverse");
+        mail.setText(
+                "Bonjour,\n\n" +
+                        "You have been invited to join " + club.getName() + " as " + role + ".\n\n" +
+                        "Your login credentials:\n\n" +
+                        "Connection Identifier : " + connectionIdentifier + "\n" +
+                        "Password : " + tempPassword + "\n\n" +
+                        "Login at : " + baseUrl + "/auth/login\n\n"
         );
         mailSender.send(mail);
     }
