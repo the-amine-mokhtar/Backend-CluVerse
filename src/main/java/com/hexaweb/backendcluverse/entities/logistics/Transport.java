@@ -1,10 +1,9 @@
-package com.hexaweb.backendcluverse.entities.event;
+package com.hexaweb.backendcluverse.entities.logistics;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.User;
-import com.hexaweb.backendcluverse.entities.logistics.Resource;
-import com.hexaweb.backendcluverse.enumerations.ReservationStatus;
+import com.hexaweb.backendcluverse.enumerations.TransportStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -27,29 +26,22 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Reservation {
+public class Transport {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDateTime scheduledDate;
+    private Long departureLocationId;
+    private Long arrivalLocationId;
 
     @Enumerated(EnumType.STRING)
-    private ReservationStatus status;
-    
-    private int quantityReserved;
-    private String notes;
+    private TransportStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "event_id", nullable = false)
+    @JoinColumn(name = "vehicle_id", nullable = false)
     @JsonIgnore
-    private Event event;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "resource_id", nullable = false)
-    @JsonIgnore
-    private Resource resource;
+    private Vehicle vehicle;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)

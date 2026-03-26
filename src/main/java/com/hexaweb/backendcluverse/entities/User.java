@@ -3,8 +3,10 @@ package com.hexaweb.backendcluverse.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hexaweb.backendcluverse.entities.election.Candidate;
 import com.hexaweb.backendcluverse.entities.election.Vote;
-import com.hexaweb.backendcluverse.entities.recruitement.Application;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
+import com.hexaweb.backendcluverse.entities.event.Reservation;
+import com.hexaweb.backendcluverse.entities.logistics.Transport;
+import com.hexaweb.backendcluverse.entities.recruitement.Application;
 import com.hexaweb.backendcluverse.entities.skills.UserSkill;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -66,5 +68,13 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<EventParticipant> eventParticipants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Reservation> reservations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Transport> transports = new ArrayList<>();
 }
 
