@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
+import com.hexaweb.backendcluverse.dto.CandidateDTO;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/candidates")
@@ -23,29 +25,31 @@ public class CandidateController {
     private final JwtUtil jwtUtil;
 
     @GetMapping
-    public List<Candidate> getCandidates(
+    public List<CandidateDTO> getCandidates(
             @RequestParam(required = false) Long electionId,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return electionId != null ? candidateService.findByElectionId(electionId) : candidateService.findAll();
+        List<Candidate> candidates = electionId != null ? candidateService.findByElectionId(electionId) : candidateService.findAll();
+        return candidates.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Candidate getById(
+    public CandidateDTO getById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return candidateService.findById(id)
+        Candidate candidate = candidateService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return mapToDTO(candidate);
     }
 
     @PostMapping
-    public Candidate submitCandidacy(
+    public CandidateDTO submitCandidacy(
             @RequestBody CandidateRequest request,
             @RequestHeader("Authorization") String authHeader) {
         String token = resolveToken(authHeader);
         Long userId = jwtUtil.extractUserId(token);
-        return candidateService.submitCandidacy(request, userId);
+        return mapToDTO(candidateService.submitCandidacy(request, userId));
     }
 
     @DeleteMapping("/{id}")
@@ -62,5 +66,21 @@ public class CandidateController {
         } catch (JWTVerificationException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or missing token");
         }
+    }
+
+    private CandidateDTO mapToDTO(Candidate candidate) {
+        if (candidate == null) return null;
+        return new CandidateDTO(
+                candidate.getId(),
+                candidate.getProgram(),
+                candidate.getStatus(),
+                candidate.getSubmissionDate(),
+                candidate.getWithdrawalDate(),
+                candidate.getAiCritique(),
+                candidate.getBio(),
+                candidate.getUser() != null ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName() : null,
+                candidate.getUser() != null ? candidate.getUser().getEmail() : null,
+                candidate.getElection() != null ? candidate.getElection().getId() : null
+        );
     }
 }

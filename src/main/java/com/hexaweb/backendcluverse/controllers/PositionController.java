@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
+import com.hexaweb.backendcluverse.dto.PositionDTO;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/positions")
@@ -23,28 +25,30 @@ public class PositionController {
     private final JwtUtil jwtUtil;
 
     @GetMapping
-    public List<Position> getByClubId(
+    public List<PositionDTO> getByClubId(
             @RequestParam(required = false) Long clubId,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return clubId != null ? positionService.findByClubId(clubId) : positionService.findAll();
+        List<Position> positions = clubId != null ? positionService.findByClubId(clubId) : positionService.findAll();
+        return positions.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Position getById(
+    public PositionDTO getById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return positionService.findById(id)
+        Position position = positionService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return mapToDTO(position);
     }
 
     @PostMapping
-    public Position create(
+    public PositionDTO create(
             @RequestBody PositionRequest request,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return positionService.createPosition(request);
+        return mapToDTO(positionService.createPosition(request));
     }
 
     @DeleteMapping("/{id}")
@@ -61,5 +65,19 @@ public class PositionController {
         } catch (JWTVerificationException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or missing token");
         }
+    }
+
+    private PositionDTO mapToDTO(Position position) {
+        if (position == null) return null;
+        return new PositionDTO(
+                position.getId(),
+                position.getName(),
+                position.getDescription(),
+                position.getTermLength(),
+                position.getMaxCandidates(),
+                position.isElectable(),
+                position.isAutoRenew(),
+                position.getCurrentHolder() != null ? position.getCurrentHolder().getFirstName() + " " + position.getCurrentHolder().getLastName() : null
+        );
     }
 }

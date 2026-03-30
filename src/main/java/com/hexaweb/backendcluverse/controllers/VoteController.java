@@ -11,7 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
+import com.hexaweb.backendcluverse.dto.VoteDTO;
+import com.hexaweb.backendcluverse.dto.CandidateDTO;
+import com.hexaweb.backendcluverse.entities.election.Candidate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/votes")
@@ -23,29 +27,31 @@ public class VoteController {
     private final JwtUtil jwtUtil;
 
     @GetMapping
-    public List<Vote> getVotes(
+    public List<VoteDTO> getVotes(
             @RequestParam(required = false) Long electionId,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return electionId != null ? voteService.findByElectionId(electionId) : voteService.findAll();
+        List<Vote> votes = electionId != null ? voteService.findByElectionId(electionId) : voteService.findAll();
+        return votes.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public Vote getById(
+    public VoteDTO getById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return voteService.findById(id)
+        Vote vote = voteService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return mapToDTO(vote);
     }
 
     @PostMapping
-    public Vote castVote(
+    public VoteDTO castVote(
             @RequestBody VoteRequest request,
             @RequestHeader("Authorization") String authHeader) {
         String token = resolveToken(authHeader);
         Long voterId = jwtUtil.extractUserId(token);
-        return voteService.castVote(request, voterId);
+        return mapToDTO(voteService.castVote(request, voterId));
     }
 
     private String resolveToken(String authHeader) {
@@ -54,5 +60,35 @@ public class VoteController {
         } catch (JWTVerificationException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or missing token");
         }
+    }
+
+    private VoteDTO mapToDTO(Vote vote) {
+        if (vote == null) return null;
+        return new VoteDTO(
+                vote.getId(),
+                vote.getTimestamp(),
+                vote.isValid(),
+                vote.getVoteWeight(),
+                vote.getVoter() != null ? vote.getVoter().getFirstName() + " " + vote.getVoter().getLastName() : null,
+                vote.getPosition() != null ? vote.getPosition().getName() : null,
+                mapToCandidateDTO(vote.getCandidate()),
+                vote.getElection() != null ? vote.getElection().getId() : null
+        );
+    }
+
+    private CandidateDTO mapToCandidateDTO(Candidate candidate) {
+        if (candidate == null) return null;
+        return new CandidateDTO(
+                candidate.getId(),
+                candidate.getProgram(),
+                candidate.getStatus(),
+                candidate.getSubmissionDate(),
+                candidate.getWithdrawalDate(),
+                candidate.getAiCritique(),
+                candidate.getBio(),
+                candidate.getUser() != null ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName() : null,
+                candidate.getUser() != null ? candidate.getUser().getEmail() : null,
+                candidate.getElection() != null ? candidate.getElection().getId() : null
+        );
     }
 }
