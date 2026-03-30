@@ -72,7 +72,8 @@ public class VoteController {
                 vote.getVoter() != null ? vote.getVoter().getFirstName() + " " + vote.getVoter().getLastName() : null,
                 vote.getPosition() != null ? vote.getPosition().getName() : null,
                 mapToCandidateDTO(vote.getCandidate()),
-                vote.getElection() != null ? vote.getElection().getId() : null
+                vote.getElection() != null ? vote.getElection().getId() : null,
+                vote.getPosition() != null ? vote.getPosition().getId() : null
         );
     }
 
@@ -88,7 +89,8 @@ public class VoteController {
                 candidate.getBio(),
                 candidate.getUser() != null ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName() : null,
                 candidate.getUser() != null ? candidate.getUser().getEmail() : null,
-                candidate.getElection() != null ? candidate.getElection().getId() : null
+                candidate.getElection() != null ? candidate.getElection().getId() : null,
+                candidate.getPosition() != null ? candidate.getPosition().getId() : null
         );
     }
 }

@@ -19,4 +19,5 @@ public class VoteDTO {
     private String positionName;
     private CandidateDTO candidate;
     private Long electionId;
+    private Long positionId;
 }

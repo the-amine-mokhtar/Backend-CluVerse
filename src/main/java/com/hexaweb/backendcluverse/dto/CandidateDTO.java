@@ -22,4 +22,5 @@ public class CandidateDTO {
     private String userName;
     private String userEmail;
     private Long electionId;
+    private Long positionId;
 }
