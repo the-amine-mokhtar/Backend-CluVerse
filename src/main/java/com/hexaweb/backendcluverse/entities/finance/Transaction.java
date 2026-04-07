@@ -1,7 +1,11 @@
 package com.hexaweb.backendcluverse.entities.finance;
 
+import java.time.LocalDate;
+
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.enumerations.TransactionType;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,8 +19,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -38,5 +40,9 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
     private Club club;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sponsor_id")
+    private Sponsor sponsor;
 }
 
