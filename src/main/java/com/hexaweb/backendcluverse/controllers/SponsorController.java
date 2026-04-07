@@ -1,11 +1,15 @@
 package com.hexaweb.backendcluverse.controllers;
 
+import com.hexaweb.backendcluverse.dto.InboundSponsorEmailRequest;
+import com.hexaweb.backendcluverse.dto.SendSponsorEmailRequest;
+import com.hexaweb.backendcluverse.dto.SponsorEmailDto;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.services.SponsorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,6 +64,68 @@ public class SponsorController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Deletion reason is required");
         }
         sponsorService.deleteWithReason(id, reason);
+    }
+
+    @GetMapping("/{id}/emails")
+    public ResponseEntity<List<SponsorEmailDto>> getEmails(@PathVariable Long id) {
+        return ResponseEntity.ok(sponsorService.getEmailHistory(id));
+    }
+
+    @GetMapping("/{id}/emails/{emailId}")
+    public ResponseEntity<SponsorEmailDto> getEmail(@PathVariable Long id, @PathVariable Long emailId) {
+        return ResponseEntity.ok(sponsorService.getEmailById(id, emailId));
+    }
+
+    @PostMapping("/{id}/emails")
+    public ResponseEntity<SponsorEmailDto> sendEmail(@PathVariable Long id,
+                                                      @RequestBody SendSponsorEmailRequest request) {
+        return ResponseEntity.ok(sponsorService.sendEmail(id, request));
+    }
+
+    @PostMapping(value = "/{id}/emails/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SponsorEmailDto> sendEmailWithFiles(@PathVariable Long id,
+                                                               @RequestParam String subject,
+                                                               @RequestParam(required = false) String body,
+                                                               @RequestParam(required = false, name = "files") MultipartFile[] files) {
+        return ResponseEntity.ok(sponsorService.sendEmailWithAttachments(id, subject, body, files));
+    }
+
+    @PostMapping("/{id}/emails/{emailId}/reply")
+    public ResponseEntity<SponsorEmailDto> replyEmail(@PathVariable Long id,
+                                                       @PathVariable Long emailId,
+                                                       @RequestBody SendSponsorEmailRequest request) {
+        return ResponseEntity.ok(sponsorService.replyEmail(id, emailId, request));
+    }
+
+    @PostMapping(value = "/{id}/emails/{emailId}/reply-with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<SponsorEmailDto> replyEmailWithFiles(@PathVariable Long id,
+                                                                @PathVariable Long emailId,
+                                                                @RequestParam(required = false) String subject,
+                                                                @RequestParam(required = false) String body,
+                                                                @RequestParam(required = false, name = "files") MultipartFile[] files) {
+        return ResponseEntity.ok(sponsorService.replyEmailWithAttachments(id, emailId, subject, body, files));
+    }
+
+    @PostMapping("/{id}/emails/{emailId}/pin")
+    public ResponseEntity<SponsorEmailDto> pinEmail(@PathVariable Long id,
+                                                     @PathVariable Long emailId) {
+        return ResponseEntity.ok(sponsorService.pinEmail(id, emailId));
+    }
+
+    @PostMapping("/{id}/emails/{emailId}/unpin")
+    public ResponseEntity<SponsorEmailDto> unpinEmail(@PathVariable Long id,
+                                                       @PathVariable Long emailId) {
+        return ResponseEntity.ok(sponsorService.unpinEmail(id, emailId));
+    }
+
+    @PostMapping("/emails/inbound")
+    public ResponseEntity<SponsorEmailDto> ingestInboundEmail(@RequestBody InboundSponsorEmailRequest request) {
+        return ResponseEntity.ok(sponsorService.ingestInboundEmail(request));
+    }
+
+    @PostMapping("/emails/sync-inbound")
+    public ResponseEntity<List<SponsorEmailDto>> syncInboundEmails() {
+        return ResponseEntity.ok(sponsorService.syncInboundEmailsFromMailbox());
     }
 
     @PostMapping("/{id}/logo")
