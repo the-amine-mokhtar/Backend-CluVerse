@@ -18,12 +18,14 @@ import java.time.LocalDateTime;
 @Service
 public class TransportService extends EntityServiceImpl<Transport, Long> {
 
+    private final TransportRepository transportRepository;
     private final VehicleRepository vehicleRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
     public TransportService(TransportRepository repository, VehicleRepository vehicleRepository, UserRepository userRepository, EventRepository eventRepository) {
         super(repository);
+        this.transportRepository = repository;
         this.vehicleRepository = vehicleRepository;
         this.userRepository = userRepository;
         this.eventRepository = eventRepository;
@@ -79,7 +81,7 @@ public class TransportService extends EntityServiceImpl<Transport, Long> {
         LocalDateTime now = LocalDateTime.now();
         long count = 0;
 
-        TransportRepository repo = (TransportRepository) this.repository;
+        TransportRepository repo = transportRepository;
         
         // Find all PLANNED transports with past dates and mark as COMPLETED
         for (Transport t : repo.findAll()) {
@@ -100,3 +102,4 @@ public class TransportService extends EntityServiceImpl<Transport, Long> {
 
         return count;
     }
+}
