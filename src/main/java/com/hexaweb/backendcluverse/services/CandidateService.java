@@ -67,4 +67,29 @@ public class CandidateService extends EntityServiceImpl<Candidate, Long> {
         candidateRepository.flush();
         return saved;
     }
+
+    public Candidate updateCandidacy(Long id, CandidateRequest req) {
+        Candidate candidate = candidateRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Candidate not found"));
+        
+        if (req.getElectionId() != null) {
+            Election election = electionRepository.findById(req.getElectionId())
+                    .orElseThrow(() -> new RuntimeException("Election not found"));
+            candidate.setElection(election);
+        }
+        
+        if (req.getPositionId() != null) {
+            Position position = positionRepository.findById(req.getPositionId())
+                    .orElseThrow(() -> new RuntimeException("Position not found"));
+            candidate.setPosition(position);
+        }
+        
+        if (req.getProgram() != null) {
+            candidate.setProgram(req.getProgram());
+        }
+        if (req.getBio() != null) {
+            candidate.setBio(req.getBio());
+        }
+        return candidateRepository.save(candidate);
+    }
 }

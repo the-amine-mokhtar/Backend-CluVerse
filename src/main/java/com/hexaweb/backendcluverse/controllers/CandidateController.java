@@ -60,6 +60,15 @@ public class CandidateController {
         candidateService.deleteById(id);
     }
 
+    @PutMapping("/{id}")
+    public CandidateDTO update(
+            @PathVariable Long id,
+            @RequestBody CandidateRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        return mapToDTO(candidateService.updateCandidacy(id, request));
+    }
+
     private String resolveToken(String authHeader) {
         try {
             return jwtUtil.resolveBearerToken(authHeader);

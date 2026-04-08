@@ -59,6 +59,15 @@ public class PositionController {
         positionService.deleteById(id);
     }
 
+    @PutMapping("/{id}")
+    public PositionDTO update(
+            @PathVariable Long id,
+            @RequestBody PositionRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        return mapToDTO(positionService.updatePosition(id, request));
+    }
+
     private String resolveToken(String authHeader) {
         try {
             return jwtUtil.resolveBearerToken(authHeader);

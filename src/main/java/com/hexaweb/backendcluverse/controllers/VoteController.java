@@ -54,6 +54,23 @@ public class VoteController {
         return mapToDTO(voteService.castVote(request, voterId));
     }
 
+    @PutMapping("/{id}")
+    public VoteDTO update(
+            @PathVariable Long id,
+            @RequestBody VoteRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        return mapToDTO(voteService.updateVote(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        voteService.deleteById(id);
+    }
+
     private String resolveToken(String authHeader) {
         try {
             return jwtUtil.resolveBearerToken(authHeader);
