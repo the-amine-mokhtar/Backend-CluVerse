@@ -1,4 +1,7 @@
 package com.hexaweb.backendcluverse.repositories;
 
-public interface InterviewReportRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.hexaweb.backendcluverse.entities.election.InterviewReport;
+
+public interface InterviewReportRepository extends JpaRepository<InterviewReport, Long> {
 }

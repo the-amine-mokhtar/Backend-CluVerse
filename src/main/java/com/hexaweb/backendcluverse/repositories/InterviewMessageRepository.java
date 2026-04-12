@@ -1,4 +1,7 @@
 package com.hexaweb.backendcluverse.repositories;
 
-public interface InterviewMessageRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+import com.hexaweb.backendcluverse.entities.election.InterviewMessage;
+
+public interface InterviewMessageRepository extends JpaRepository<InterviewMessage, Long> {
 }
