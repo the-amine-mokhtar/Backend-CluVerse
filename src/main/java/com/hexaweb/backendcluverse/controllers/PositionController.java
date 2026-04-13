@@ -12,7 +12,9 @@ import org.springframework.web.server.ResponseStatusException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import com.hexaweb.backendcluverse.dto.PositionDTO;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -68,6 +70,17 @@ public class PositionController {
         return mapToDTO(positionService.updatePosition(id, request));
     }
 
+    @PatchMapping("/{id}/held-since")
+    public PositionDTO updateHeldSince(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        String dateStr = payload.get("heldSince");
+        LocalDate heldSince = (dateStr != null && !dateStr.isEmpty()) ? LocalDate.parse(dateStr) : null;
+        return mapToDTO(positionService.updateHeldSince(id, heldSince));
+    }
+
     private String resolveToken(String authHeader) {
         try {
             return jwtUtil.resolveBearerToken(authHeader);
@@ -87,7 +100,8 @@ public class PositionController {
                 position.getIsElectable(),
                 position.getIsAutoRenew(),
                 position.getCurrentHolder() != null ? position.getCurrentHolder().getFirstName() + " " + position.getCurrentHolder().getLastName() : null,
-                position.getCurrentHolder() != null ? position.getCurrentHolder().getId() : null
+                position.getCurrentHolder() != null ? position.getCurrentHolder().getId() : null,
+                position.getHeldSince()
         );
     }
 }

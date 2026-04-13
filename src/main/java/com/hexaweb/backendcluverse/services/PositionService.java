@@ -9,7 +9,9 @@ import com.hexaweb.backendcluverse.repositories.PositionRepository;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class PositionService extends EntityServiceImpl<Position, Long> {
@@ -67,11 +69,25 @@ public class PositionService extends EntityServiceImpl<Position, Long> {
         if (req.getCurrentHolderId() != null) {
             User holder = userRepository.findById(req.getCurrentHolderId())
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + req.getCurrentHolderId()));
+            Long currentHolderId = position.getCurrentHolder() != null
+                    ? position.getCurrentHolder().getId()
+                    : null;
+
+            if (!Objects.equals(req.getCurrentHolderId(), currentHolderId)) {
+                position.setHeldSince(LocalDate.now());
+            }
             position.setCurrentHolder(holder);
         } else {
             position.setCurrentHolder(null);
         }
 
+        return positionRepository.save(position);
+    }
+
+    public Position updateHeldSince(Long id, LocalDate heldSince) {
+        Position position = positionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Position not found"));
+        position.setHeldSince(heldSince);
         return positionRepository.save(position);
     }
 }

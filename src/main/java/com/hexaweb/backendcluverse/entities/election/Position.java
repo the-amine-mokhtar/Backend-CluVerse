@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +47,9 @@ public class Position {
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "current_holder_id", nullable = true)
     private User currentHolder;
+    
+    @jakarta.persistence.Column(nullable = true)
+    private LocalDate heldSince;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
