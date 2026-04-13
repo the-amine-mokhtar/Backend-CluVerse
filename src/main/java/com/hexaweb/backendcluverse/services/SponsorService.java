@@ -4,12 +4,14 @@ import com.hexaweb.backendcluverse.dto.InboundSponsorEmailRequest;
 import com.hexaweb.backendcluverse.dto.SendSponsorEmailRequest;
 import com.hexaweb.backendcluverse.dto.SponsorEmailAttachmentDto;
 import com.hexaweb.backendcluverse.dto.SponsorEmailDto;
+import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.sponsoring.SponsorEmailAttachment;
 import com.hexaweb.backendcluverse.entities.sponsoring.SponsorEmail;
 import com.hexaweb.backendcluverse.enumerations.SponsorEmailDirection;
 import com.hexaweb.backendcluverse.enumerations.SponsorStatus;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.repositories.SponsorEmailRepository;
+import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.SponsorRepository;
 import jakarta.mail.Address;
 import jakarta.mail.BodyPart;
@@ -43,8 +45,10 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,11 +56,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
-    private static final Pattern SPONSOR_MARKER_PATTERN = Pattern.compile("^\\s*\\[SP-(\\d+)]\\s*(.*)$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SPONSOR_MARKER_PATTERN = Pattern.compile("\\[SP-(\\d+)]", Pattern.CASE_INSENSITIVE);
     private static final long MAX_ATTACHMENT_SIZE_BYTES = 10L * 1024 * 1024;
 
     private final SponsorRepository sponsorRepository;
     private final SponsorEmailRepository sponsorEmailRepository;
+    private final ClubRepository clubRepository;
     private final JavaMailSender mailSender;
     private final CloudinaryService cloudinaryService;
 
@@ -87,14 +92,29 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
     public SponsorService(
             SponsorRepository repository,
             SponsorEmailRepository sponsorEmailRepository,
+            ClubRepository clubRepository,
             JavaMailSender mailSender,
             CloudinaryService cloudinaryService
     ) {
         super(repository);
         this.sponsorRepository = repository;
         this.sponsorEmailRepository = sponsorEmailRepository;
+        this.clubRepository = clubRepository;
         this.mailSender = mailSender;
         this.cloudinaryService = cloudinaryService;
+    }
+
+    public List<Sponsor> findAllByClub(Long clubId) {
+        return sponsorRepository.findByClubIdOrderByIdDesc(clubId);
+    }
+
+    public java.util.Optional<Sponsor> findByIdAndClub(Long sponsorId, Long clubId) {
+        return sponsorRepository.findByIdAndClubId(sponsorId, clubId);
+    }
+
+    public Club requireClub(Long clubId) {
+        return clubRepository.findById(clubId)
+                .orElseThrow(() -> new RuntimeException("Club not found"));
     }
 
     @PostConstruct
@@ -106,21 +126,21 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         }
     }
 
-    public List<SponsorEmailDto> getEmailHistory(Long sponsorId) {
-        return sponsorEmailRepository.findBySponsorIdOrderBySentAtDesc(sponsorId)
+    public List<SponsorEmailDto> getEmailHistory(Long clubId, Long sponsorId) {
+        return sponsorEmailRepository.findBySponsorIdAndClubIdOrderBySentAtDesc(sponsorId, clubId)
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
-    public SponsorEmailDto getEmailById(Long sponsorId, Long emailId) {
-        SponsorEmail email = sponsorEmailRepository.findByIdAndSponsorId(emailId, sponsorId)
+    public SponsorEmailDto getEmailById(Long clubId, Long sponsorId, Long emailId) {
+        SponsorEmail email = sponsorEmailRepository.findByIdAndSponsorIdAndClubId(emailId, sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Email not found"));
         return toDto(email);
     }
 
-    public SponsorEmailDto sendEmail(Long sponsorId, SendSponsorEmailRequest request) {
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+    public SponsorEmailDto sendEmail(Long clubId, Long sponsorId, SendSponsorEmailRequest request) {
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found"));
 
         String subject = clip(withSponsorMarker(sponsorId, sanitize(request.getSubject(), "No subject")), 250);
@@ -130,6 +150,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
 
         SponsorEmail email = new SponsorEmail();
         email.setSponsor(sponsor);
+        email.setClub(sponsor.getClub());
         email.setSubject(subject);
         email.setBody(body);
         email.setDirection(SponsorEmailDirection.OUTBOUND);
@@ -141,8 +162,8 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         return toDto(sponsorEmailRepository.save(email));
     }
 
-    public SponsorEmailDto sendEmailWithAttachments(Long sponsorId, String subjectValue, String bodyValue, MultipartFile[] files) {
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+    public SponsorEmailDto sendEmailWithAttachments(Long clubId, Long sponsorId, String subjectValue, String bodyValue, MultipartFile[] files) {
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found"));
 
         String subject = clip(withSponsorMarker(sponsorId, sanitize(subjectValue, "No subject")), 250);
@@ -153,6 +174,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
 
         SponsorEmail email = new SponsorEmail();
         email.setSponsor(sponsor);
+        email.setClub(sponsor.getClub());
         email.setSubject(subject);
         email.setBody(body);
         email.setDirection(SponsorEmailDirection.OUTBOUND);
@@ -165,11 +187,11 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         return toDto(sponsorEmailRepository.save(email));
     }
 
-    public SponsorEmailDto replyEmail(Long sponsorId, Long emailId, SendSponsorEmailRequest request) {
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+    public SponsorEmailDto replyEmail(Long clubId, Long sponsorId, Long emailId, SendSponsorEmailRequest request) {
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found"));
 
-        SponsorEmail parent = sponsorEmailRepository.findByIdAndSponsorId(emailId, sponsorId)
+        SponsorEmail parent = sponsorEmailRepository.findByIdAndSponsorIdAndClubId(emailId, sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Original email not found"));
 
         String subject = sanitize(request.getSubject(), "");
@@ -183,6 +205,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
 
         SponsorEmail reply = new SponsorEmail();
         reply.setSponsor(sponsor);
+        reply.setClub(sponsor.getClub());
         reply.setSubject(subject);
         reply.setBody(body);
         reply.setDirection(SponsorEmailDirection.REPLY);
@@ -196,11 +219,11 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         return toDto(sponsorEmailRepository.save(reply));
     }
 
-    public SponsorEmailDto replyEmailWithAttachments(Long sponsorId, Long emailId, String subjectValue, String bodyValue, MultipartFile[] files) {
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+    public SponsorEmailDto replyEmailWithAttachments(Long clubId, Long sponsorId, Long emailId, String subjectValue, String bodyValue, MultipartFile[] files) {
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found"));
 
-        SponsorEmail parent = sponsorEmailRepository.findByIdAndSponsorId(emailId, sponsorId)
+        SponsorEmail parent = sponsorEmailRepository.findByIdAndSponsorIdAndClubId(emailId, sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Original email not found"));
 
         String subject = sanitize(subjectValue, "");
@@ -215,6 +238,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
 
         SponsorEmail reply = new SponsorEmail();
         reply.setSponsor(sponsor);
+        reply.setClub(sponsor.getClub());
         reply.setSubject(subject);
         reply.setBody(body);
         reply.setDirection(SponsorEmailDirection.REPLY);
@@ -229,7 +253,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         return toDto(sponsorEmailRepository.save(reply));
     }
 
-    public SponsorEmailDto ingestInboundEmail(InboundSponsorEmailRequest request) {
+    public SponsorEmailDto ingestInboundEmail(Long clubId, InboundSponsorEmailRequest request) {
         String subject = sanitize(request.getSubject(), "");
         Long sponsorId = extractSponsorIdFromSubject(subject);
 
@@ -237,11 +261,12 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
             throw new RuntimeException("Missing sponsor marker in subject. Expected format: [SP-<id>]");
         }
 
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found for marker SP-" + sponsorId));
 
         SponsorEmail email = new SponsorEmail();
         email.setSponsor(sponsor);
+        email.setClub(sponsor.getClub());
         email.setSubject(clip(withSponsorMarker(sponsorId, subject), 250));
         email.setBody(clip(sanitize(request.getBody(), ""), 60000));
         email.setDirection(SponsorEmailDirection.INBOUND);
@@ -257,7 +282,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public List<SponsorEmailDto> syncInboundEmailsFromMailbox() {
+    public List<SponsorEmailDto> syncInboundEmailsFromMailbox(Long clubId) {
         List<SponsorEmailDto> synced = new ArrayList<>();
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
@@ -279,22 +304,28 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
                     try {
                         String subject = message.getSubject();
                         Long sponsorId = extractSponsorIdFromSubject(subject);
-                        if (sponsorId == null) {
+                        String fromJoined = clip(joinAddresses(message.getFrom()), 250);
+
+                        Sponsor sponsor = null;
+                        if (sponsorId != null) {
+                            sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId).orElse(null);
+                        }
+                        if (sponsor == null) {
+                            sponsor = resolveSponsorFromSender(clubId, fromJoined);
+                        }
+                        if (sponsor == null) {
                             continue;
                         }
+                        sponsorId = sponsor.getId();
 
                         String messageId = firstHeader(message, "Message-ID");
-                        if (messageId != null && sponsorEmailRepository.existsByExternalMessageId(messageId)) {
-                            continue;
-                        }
-
-                        Sponsor sponsor = sponsorRepository.findById(sponsorId).orElse(null);
-                        if (sponsor == null) {
+                        if (messageId != null && sponsorEmailRepository.existsByExternalMessageIdAndClubId(messageId, clubId)) {
                             continue;
                         }
 
                         SponsorEmail email = new SponsorEmail();
                         email.setSponsor(sponsor);
+                        email.setClub(sponsor.getClub());
                         email.setSubject(clip(withSponsorMarker(sponsorId, sanitize(subject, "No subject")), 250));
                         email.setBody(clip(extractTextBody(message), 60000));
                         email.setDirection(SponsorEmailDirection.INBOUND);
@@ -302,7 +333,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
                                 ? LocalDateTime.now()
                                 : LocalDateTime.ofInstant(message.getSentDate().toInstant(), ZoneId.systemDefault()));
                         email.setPinned(false);
-                        email.setFromAddress(clip(joinAddresses(message.getFrom()), 250));
+                            email.setFromAddress(fromJoined);
                         email.setToAddress(clip(joinAddresses(message.getRecipients(Message.RecipientType.TO)), 250));
                         email.setExternalMessageId(clip(messageId, 250));
                         email.setInReplyToMessageId(clip(firstHeader(message, "In-Reply-To"), 250));
@@ -324,21 +355,51 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         return synced;
     }
 
-    public SponsorEmailDto pinEmail(Long sponsorId, Long emailId) {
-        SponsorEmail email = sponsorEmailRepository.findByIdAndSponsorId(emailId, sponsorId)
+    private Sponsor resolveSponsorFromSender(Long clubId, String fromJoined) {
+        Set<String> emails = extractEmailCandidates(fromJoined);
+        for (String email : emails) {
+            Sponsor sponsor = sponsorRepository.findByContactEmailIgnoreCaseAndClubId(email, clubId).orElse(null);
+            if (sponsor != null) {
+                return sponsor;
+            }
+        }
+        return null;
+    }
+
+    private Set<String> extractEmailCandidates(String raw) {
+        Set<String> candidates = new HashSet<>();
+        if (raw == null || raw.isBlank()) {
+            return candidates;
+        }
+
+        Pattern emailPattern = Pattern.compile("[A-Z0-9._%+-]+@[A-Z0-9.-]+\\\\.[A-Z]{2,}", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = emailPattern.matcher(raw);
+        while (matcher.find()) {
+            candidates.add(matcher.group().toLowerCase());
+        }
+
+        if (candidates.isEmpty() && raw.contains("@")) {
+            candidates.add(raw.trim().toLowerCase());
+        }
+        return candidates;
+    }
+
+    public SponsorEmailDto pinEmail(Long clubId, Long sponsorId, Long emailId) {
+        SponsorEmail email = sponsorEmailRepository.findByIdAndSponsorIdAndClubId(emailId, sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Email not found"));
         email.setPinned(true);
         return toDto(sponsorEmailRepository.save(email));
     }
 
-    public SponsorEmailDto unpinEmail(Long sponsorId, Long emailId) {
-        SponsorEmail email = sponsorEmailRepository.findByIdAndSponsorId(emailId, sponsorId)
+    public SponsorEmailDto unpinEmail(Long clubId, Long sponsorId, Long emailId) {
+        SponsorEmail email = sponsorEmailRepository.findByIdAndSponsorIdAndClubId(emailId, sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Email not found"));
         email.setPinned(false);
         return toDto(sponsorEmailRepository.save(email));
     }
 
-    public Sponsor createPendingSponsor(Sponsor sponsor) {
+    public Sponsor createPendingSponsor(Long clubId, Sponsor sponsor) {
+        sponsor.setClub(requireClub(clubId));
         sponsor.setStatus(SponsorStatus.PENDING);
         sponsor.setConfirmationToken(UUID.randomUUID().toString());
         sponsor.setTokenExpiresAt(LocalDateTime.now().plusHours(72));
@@ -385,8 +446,8 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         return sponsor.getTokenExpiresAt() != null && LocalDateTime.now().isAfter(sponsor.getTokenExpiresAt());
     }
 
-    public Sponsor uploadLogo(Long sponsorId, MultipartFile file) {
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+    public Sponsor uploadLogo(Long clubId, Long sponsorId, MultipartFile file) {
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found"));
         try {
             String logoUrl = cloudinaryService.uploadLogo(file);
@@ -397,8 +458,8 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         }
     }
 
-    public void deleteWithReason(Long sponsorId, String reason) {
-        Sponsor sponsor = sponsorRepository.findById(sponsorId)
+    public void deleteWithReason(Long clubId, Long sponsorId, String reason) {
+        Sponsor sponsor = sponsorRepository.findByIdAndClubId(sponsorId, clubId)
                 .orElseThrow(() -> new RuntimeException("Sponsor not found"));
         sendTerminationEmail(sponsor, reason);
         sponsorRepository.deleteById(sponsorId);
@@ -688,14 +749,14 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
         private String withSponsorMarker(Long sponsorId, String subject) {
             String safeSubject = sanitize(subject, "No subject");
             Matcher matcher = SPONSOR_MARKER_PATTERN.matcher(safeSubject);
-            if (matcher.matches()) {
+            if (matcher.find()) {
                 String existingId = matcher.group(1);
-                String rest = sanitize(matcher.group(2), "No subject");
                 if (String.valueOf(sponsorId).equals(existingId)) {
-                    return "[SP-" + sponsorId + "] " + rest;
+                    return safeSubject;
                 }
             }
-            return "[SP-" + sponsorId + "] " + safeSubject;
+            String withoutMarkers = safeSubject.replaceAll("(?i)\\\\[SP-\\\\d+\\\\]", "").trim();
+            return "[SP-" + sponsorId + "] " + sanitize(withoutMarkers, "No subject");
         }
 
         private Long extractSponsorIdFromSubject(String subject) {
@@ -703,7 +764,7 @@ public class SponsorService extends EntityServiceImpl<Sponsor, Long> {
                 return null;
             }
             Matcher matcher = SPONSOR_MARKER_PATTERN.matcher(subject);
-            if (!matcher.matches()) {
+            if (!matcher.find()) {
                 return null;
             }
             return Long.valueOf(matcher.group(1));

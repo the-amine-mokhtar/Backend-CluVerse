@@ -1,6 +1,7 @@
 package com.hexaweb.backendcluverse.entities.sponsoring;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.enumerations.SponsorStatus;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -11,6 +12,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -50,5 +53,9 @@ public class Sponsor {
     @OneToMany(mappedBy = "sponsor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Sponsorship> sponsorships = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id")
+    private Club club;
 }
 

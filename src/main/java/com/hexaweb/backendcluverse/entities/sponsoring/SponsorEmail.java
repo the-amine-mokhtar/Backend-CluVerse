@@ -1,5 +1,6 @@
 package com.hexaweb.backendcluverse.entities.sponsoring;
 
+import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.enumerations.SponsorEmailDirection;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -70,4 +71,8 @@ public class SponsorEmail {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sponsor_id", nullable = false)
     private Sponsor sponsor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "club_id")
+    private Club club;
 }
