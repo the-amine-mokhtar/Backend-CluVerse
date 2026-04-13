@@ -33,7 +33,7 @@ public class PositionController {
         return positions.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     public PositionDTO getById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
@@ -86,7 +86,8 @@ public class PositionController {
                 position.getMaxCandidates(),
                 position.isElectable(),
                 position.isAutoRenew(),
-                position.getCurrentHolder() != null ? position.getCurrentHolder().getFirstName() + " " + position.getCurrentHolder().getLastName() : null
+                position.getCurrentHolder() != null ? position.getCurrentHolder().getFirstName() + " " + position.getCurrentHolder().getLastName() : null,
+                position.getCurrentHolder() != null ? position.getCurrentHolder().getId() : null
         );
     }
 }

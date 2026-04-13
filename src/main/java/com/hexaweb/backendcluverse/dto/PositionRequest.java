@@ -10,8 +10,8 @@ public class PositionRequest {
     private String description;
     private int termLength;
     private int maxCandidates;
-    private boolean isElectable;
-    private boolean isAutoRenew;
+    private boolean electable;
+    private boolean autoRenew;
     private Long clubId;
     private Long currentHolderId;
 }

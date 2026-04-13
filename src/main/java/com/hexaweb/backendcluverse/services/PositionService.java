@@ -55,16 +55,11 @@ public class PositionService extends EntityServiceImpl<Position, Long> {
         Position position = positionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Position not found"));
 
-        if (req.getClubId() != null) {
-            Club club = clubRepository.findById(req.getClubId())
-                    .orElseThrow(() -> new RuntimeException("Club not found"));
-            position.setClub(club);
-        }
-
         if (req.getName() != null) position.setName(req.getName());
         if (req.getDescription() != null) position.setDescription(req.getDescription());
         if (req.getTermLength() > 0) position.setTermLength(req.getTermLength());
         if (req.getMaxCandidates() > 0) position.setMaxCandidates(req.getMaxCandidates());
+        
         position.setElectable(req.isElectable());
         position.setAutoRenew(req.isAutoRenew());
 
