@@ -11,10 +11,10 @@ public class PositionDTO {
     private Long id;
     private String name;
     private String description;
-    private int termLength;
-    private int maxCandidates;
-    private boolean electable;
-    private boolean autoRenew;
+    private Integer termLength;
+    private Integer maxCandidates;
+    private Boolean electable;
+    private Boolean autoRenew;
 
     private String currentHolderName;
     private Long currentHolderId;

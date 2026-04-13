@@ -84,8 +84,8 @@ public class PositionController {
                 position.getDescription(),
                 position.getTermLength(),
                 position.getMaxCandidates(),
-                position.isElectable(),
-                position.isAutoRenew(),
+                position.getIsElectable(),
+                position.getIsAutoRenew(),
                 position.getCurrentHolder() != null ? position.getCurrentHolder().getFirstName() + " " + position.getCurrentHolder().getLastName() : null,
                 position.getCurrentHolder() != null ? position.getCurrentHolder().getId() : null
         );

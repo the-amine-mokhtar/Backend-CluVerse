@@ -38,8 +38,8 @@ public class PositionService extends EntityServiceImpl<Position, Long> {
         position.setDescription(req.getDescription());
         position.setTermLength(req.getTermLength());
         position.setMaxCandidates(req.getMaxCandidates());
-        position.setElectable(req.isElectable());
-        position.setAutoRenew(req.isAutoRenew());
+        position.setIsElectable(req.getElectable());
+        position.setIsAutoRenew(req.getAutoRenew());
         position.setClub(club);
 
         if (req.getCurrentHolderId() != null) {
@@ -57,11 +57,12 @@ public class PositionService extends EntityServiceImpl<Position, Long> {
 
         if (req.getName() != null) position.setName(req.getName());
         if (req.getDescription() != null) position.setDescription(req.getDescription());
-        if (req.getTermLength() > 0) position.setTermLength(req.getTermLength());
-        if (req.getMaxCandidates() > 0) position.setMaxCandidates(req.getMaxCandidates());
-        
-        position.setElectable(req.isElectable());
-        position.setAutoRenew(req.isAutoRenew());
+
+        position.setTermLength(req.getTermLength());
+        position.setMaxCandidates(req.getMaxCandidates());
+
+        position.setIsElectable(req.getElectable());
+        position.setIsAutoRenew(req.getAutoRenew());
 
         if (req.getCurrentHolderId() != null) {
             User holder = userRepository.findById(req.getCurrentHolderId())

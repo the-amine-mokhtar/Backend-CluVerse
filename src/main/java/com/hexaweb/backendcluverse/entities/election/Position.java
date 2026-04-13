@@ -26,7 +26,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Position {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,12 +34,14 @@ public class Position {
 
     private String name;
     private String description;
-    private int termLength;
-    private int maxCandidates;
-    private boolean isElectable;
-
-
-    private boolean isAutoRenew;
+    @jakarta.persistence.Column(nullable = true)
+    private Integer termLength;
+    @jakarta.persistence.Column(nullable = true)
+    private Integer maxCandidates;
+    @jakarta.persistence.Column(nullable = true)
+    private Boolean isElectable;
+    @jakarta.persistence.Column(nullable = true)
+    private Boolean isAutoRenew;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "current_holder_id", nullable = true)
@@ -62,4 +64,3 @@ public class Position {
     @JsonIgnore
     private List<Vote> votes = new ArrayList<>();
 }
-
