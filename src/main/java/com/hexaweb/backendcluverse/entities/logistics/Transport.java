@@ -1,7 +1,12 @@
-package com.hexaweb.backendcluverse.entities;
+package com.hexaweb.backendcluverse.entities.logistics;
 
-import com.hexaweb.backendcluverse.enumerations.RoleType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.enumerations.TransportStatus;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -13,10 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -24,23 +26,25 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Membership {
+public class Transport {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate joinDate;
-    private boolean active;
+    private LocalDateTime scheduledDate;
+    private Long departureLocationId;
+    private Long arrivalLocationId;
+
+    @Enumerated(EnumType.STRING)
+    private TransportStatus status;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "club_id", nullable = false)
-    private Club club;
+    @JoinColumn(name = "vehicle_id", nullable = false)
+    @JsonIgnore
+    private Vehicle vehicle;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User user;
-
-    @Enumerated(EnumType.STRING)
-    private RoleType role;
 }
-

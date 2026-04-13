@@ -35,14 +35,13 @@ public class ResourceController {
     }
 
     @PostMapping
-    public Resource create(@RequestBody Resource resource) {
-        return resourceService.save(resource);
+    public Resource create(@RequestBody com.hexaweb.backendcluverse.dto.ResourceRequest request) {
+        return resourceService.createResource(request);
     }
 
     @PutMapping("/{id}")
-    public Resource update(@PathVariable Long id, @RequestBody Resource resource) {
-        resource.setId(id);
-        return resourceService.save(resource);
+    public Resource update(@PathVariable Long id, @RequestBody com.hexaweb.backendcluverse.dto.ResourceRequest request) {
+        return resourceService.updateResource(id, request);
     }
 
     @DeleteMapping("/{id}")
