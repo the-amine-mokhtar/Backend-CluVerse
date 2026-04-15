@@ -1,14 +1,17 @@
 package com.hexaweb.backendcluverse.controllers;
 
+import com.hexaweb.backendcluverse.dto.TransportPredictionResponse;
 import com.hexaweb.backendcluverse.dto.TransportRequest;
 import com.hexaweb.backendcluverse.dto.TransportResponse;
 import com.hexaweb.backendcluverse.entities.logistics.Transport;
+import com.hexaweb.backendcluverse.services.TransportPredictionService;
 import com.hexaweb.backendcluverse.services.TransportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -19,6 +22,7 @@ import java.util.stream.Collectors;
 public class TransportController {
 
     private final TransportService transportService;
+    private final TransportPredictionService transportPredictionService;
 
     private TransportResponse toResponse(Transport transport) {
         if (transport == null) {
@@ -57,6 +61,20 @@ public class TransportController {
         return transportService.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @GetMapping(value = "/prediction", 
+               produces = "application/json;charset=UTF-8")
+    public TransportPredictionResponse getPrediction(
+            @RequestParam Long departureLocationId,
+            @RequestParam Long arrivalLocationId,
+            @RequestParam String scheduledDate,
+            @RequestParam(required = false) String departureName,
+            @RequestParam(required = false) String arrivalName) {
+        LocalDateTime dateTime = LocalDateTime.parse(scheduledDate);
+        return transportPredictionService.predictTransport(
+                departureLocationId, arrivalLocationId, dateTime, 
+                departureName, arrivalName);
     }
 
     @GetMapping("/{id}")

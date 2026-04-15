@@ -63,4 +63,7 @@ public class Transport {
 
     @Column(name = "event_id", insertable = false, updatable = false)
     private Long eventId;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
 }

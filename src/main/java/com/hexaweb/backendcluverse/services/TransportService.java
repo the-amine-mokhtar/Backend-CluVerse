@@ -88,6 +88,7 @@ public class TransportService extends EntityServiceImpl<Transport, Long> {
             if (t.getStatus() == TransportStatus.PLANNED && t.getScheduledDate() != null) {
                 if (t.getScheduledDate().isBefore(now)) {
                     t.setStatus(TransportStatus.COMPLETED);
+                    t.setCompletedAt(LocalDateTime.now());
                     save(t);
                     count++;
                 }
