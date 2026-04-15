@@ -20,4 +20,5 @@ public class VoteDTO {
     private CandidateDTO candidate;
     private Long electionId;
     private Long positionId;
+    private String electionName;
 }

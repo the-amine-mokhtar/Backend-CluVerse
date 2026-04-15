@@ -4,6 +4,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.hexaweb.backendcluverse.dto.CandidateRequest;
 import com.hexaweb.backendcluverse.entities.election.Candidate;
 import com.hexaweb.backendcluverse.services.CandidateService;
+import com.hexaweb.backendcluverse.repositories.VoteRepository;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 public class CandidateController {
 
     private final CandidateService candidateService;
+    private final VoteRepository voteRepository;
     private final JwtUtil jwtUtil;
 
     @GetMapping
@@ -79,6 +81,11 @@ public class CandidateController {
 
     private CandidateDTO mapToDTO(Candidate candidate) {
         if (candidate == null) return null;
+        
+        long voteCount = voteRepository.countByCandidateId(candidate.getId());
+        long totalElectionVotes = (candidate.getElection() != null) ? voteRepository.countByElectionId(candidate.getElection().getId()) : 0;
+        double percentage = (totalElectionVotes > 0) ? (double) voteCount / totalElectionVotes * 100 : 0.0;
+
         return new CandidateDTO(
                 candidate.getId(),
                 candidate.getProgram(),
@@ -90,7 +97,10 @@ public class CandidateController {
                 candidate.getUser() != null ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName() : null,
                 candidate.getUser() != null ? candidate.getUser().getEmail() : null,
                 candidate.getElection() != null ? candidate.getElection().getId() : null,
-                candidate.getPosition() != null ? candidate.getPosition().getId() : null
+                candidate.getPosition() != null ? candidate.getPosition().getId() : null,
+                voteCount,
+                totalElectionVotes,
+                percentage
         );
     }
 }

@@ -23,4 +23,8 @@ public class CandidateDTO {
     private String userEmail;
     private Long electionId;
     private Long positionId;
+
+    private long voteCount;
+    private long totalElectionVotes;
+    private double percentage;
 }

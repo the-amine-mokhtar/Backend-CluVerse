@@ -4,6 +4,7 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.hexaweb.backendcluverse.dto.VoteRequest;
 import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.services.VoteService;
+import com.hexaweb.backendcluverse.repositories.VoteRepository;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class VoteController {
 
     private final VoteService voteService;
+    private final VoteRepository voteRepository;
     private final JwtUtil jwtUtil;
 
     @GetMapping
@@ -80,7 +82,8 @@ public class VoteController {
     }
 
     private VoteDTO mapToDTO(Vote vote) {
-        if (vote == null) return null;
+        if (vote == null)
+            return null;
         return new VoteDTO(
                 vote.getId(),
                 vote.getTimestamp(),
@@ -90,12 +93,20 @@ public class VoteController {
                 vote.getPosition() != null ? vote.getPosition().getName() : null,
                 mapToCandidateDTO(vote.getCandidate()),
                 vote.getElection() != null ? vote.getElection().getId() : null,
-                vote.getPosition() != null ? vote.getPosition().getId() : null
-        );
+                vote.getPosition() != null ? vote.getPosition().getId() : null,
+                vote.getElection() != null ? vote.getElection().getTitle() : null);
     }
 
     private CandidateDTO mapToCandidateDTO(Candidate candidate) {
-        if (candidate == null) return null;
+        if (candidate == null)
+            return null;
+
+        long voteCount = voteRepository.countByCandidateId(candidate.getId());
+        long totalElectionVotes = (candidate.getElection() != null)
+                ? voteRepository.countByElectionId(candidate.getElection().getId())
+                : 0;
+        double percentage = (totalElectionVotes > 0) ? (double) voteCount / totalElectionVotes * 100 : 0.0;
+
         return new CandidateDTO(
                 candidate.getId(),
                 candidate.getProgram(),
@@ -104,10 +115,14 @@ public class VoteController {
                 candidate.getWithdrawalDate(),
                 candidate.getAiCritique(),
                 candidate.getBio(),
-                candidate.getUser() != null ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName() : null,
+                candidate.getUser() != null
+                        ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName()
+                        : null,
                 candidate.getUser() != null ? candidate.getUser().getEmail() : null,
                 candidate.getElection() != null ? candidate.getElection().getId() : null,
-                candidate.getPosition() != null ? candidate.getPosition().getId() : null
-        );
+                candidate.getPosition() != null ? candidate.getPosition().getId() : null,
+                voteCount,
+                totalElectionVotes,
+                percentage);
     }
 }
