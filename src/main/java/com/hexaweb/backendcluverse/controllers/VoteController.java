@@ -14,9 +14,21 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import com.hexaweb.backendcluverse.dto.VoteDTO;
 import com.hexaweb.backendcluverse.dto.CandidateDTO;
+import com.hexaweb.backendcluverse.dto.VoteTestResponse;
 import com.hexaweb.backendcluverse.entities.election.Candidate;
+import com.hexaweb.backendcluverse.entities.election.Election;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.repositories.CandidateRepository;
+import com.hexaweb.backendcluverse.repositories.ElectionRepository;
+import com.hexaweb.backendcluverse.repositories.UserRepository;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/votes")
@@ -27,6 +39,9 @@ public class VoteController {
     private final VoteService voteService;
     private final VoteRepository voteRepository;
     private final JwtUtil jwtUtil;
+    private final ElectionRepository electionRepository;
+    private final CandidateRepository candidateRepository;
+    private final UserRepository userRepository;
 
     @GetMapping
     public List<VoteDTO> getVotes(
@@ -71,6 +86,93 @@ public class VoteController {
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
         voteService.deleteById(id);
+    }
+
+    @PostMapping("/{electionId}/test")
+    public VoteTestResponse simulateVotes(
+            @PathVariable Long electionId,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+
+        // Validate election exists
+        Election election = electionRepository.findById(electionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Election not found"));
+
+        // Get candidates for this election
+        List<Candidate> candidates = candidateRepository.findByElectionId(electionId);
+        if (candidates.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No candidates found for this election");
+        }
+
+        // Get all users for voting
+        List<User> users = userRepository.findAll();
+        if (users.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No users found in the system");
+        }
+
+        // Create 20 votes at random times over 20 seconds
+        List<Long> createdVoteIds = new ArrayList<>();
+        Random random = new Random();
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+        // Schedule 20 vote creations
+        for (int i = 0; i < 20; i++) {
+            // Random delay between 0 and 20 seconds
+            long delaySeconds = random.nextLong(21);
+            
+            int voteIndex = i;
+            scheduler.schedule(() -> {
+                try {
+                    Candidate candidate = candidates.get(random.nextInt(candidates.size()));
+                    User voter = users.get(random.nextInt(users.size()));
+
+                    Vote vote = new Vote();
+                    vote.setCandidate(candidate);
+                    vote.setVoter(voter);
+                    vote.setElection(election);
+                    vote.setPosition(candidate.getPosition());
+                    vote.setTimestamp(LocalDateTime.now());
+                    vote.setValid(true);
+                    vote.setVoteWeight(1);
+
+                    Vote savedVote = voteRepository.save(vote);
+                    createdVoteIds.add(savedVote.getId());
+                } catch (Exception e) {
+                    System.err.println("Error creating vote " + voteIndex + ": " + e.getMessage());
+                }
+            }, delaySeconds, TimeUnit.SECONDS);
+        }
+
+        // Wait for all scheduled tasks to complete (25 seconds to be safe)
+        try {
+            scheduler.shutdown();
+            boolean completed = scheduler.awaitTermination(25, TimeUnit.SECONDS);
+            if (!completed) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            scheduler.shutdownNow();
+        }
+
+        // Get the created vote count before deletion
+        int createdCount = createdVoteIds.size();
+
+        // Delete all created votes
+        for (Long voteId : createdVoteIds) {
+            try {
+                voteRepository.deleteById(voteId);
+            } catch (Exception e) {
+                System.err.println("Error deleting vote " + voteId + ": " + e.getMessage());
+            }
+        }
+
+        return new VoteTestResponse(
+                "Test simulation completed",
+                createdCount,
+                createdVoteIds.size(),
+                "All " + createdVoteIds.size() + " test votes have been created and deleted successfully"
+        );
     }
 
     private String resolveToken(String authHeader) {
