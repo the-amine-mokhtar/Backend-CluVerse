@@ -10,9 +10,12 @@ import com.hexaweb.backendcluverse.repositories.UserRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import lombok.extern.slf4j.Slf4j;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -20,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
+@Slf4j
 
 public class VerificationService {
 
@@ -76,7 +80,11 @@ public class VerificationService {
                         baseUrl + "/verify?code=" + activationCode + "\n\n" +
                         "Ce lien expire dans 24h."
         );
-        mailSender.send(mail);
+        try {
+            mailSender.send(mail);
+        } catch (MailException exception) {
+            log.warn("Activation email could not be sent to {}: {}", club.getEmail(), exception.getMessage());
+        }
     }
 
 
@@ -112,6 +120,10 @@ public class VerificationService {
                         "Password : " + tempPassword + "\n\n" +
                         "Login at : " + baseUrl + "/auth/login\n\n"
         );
-        mailSender.send(mail);
+        try {
+            mailSender.send(mail);
+        } catch (MailException exception) {
+            log.warn("Invitation email could not be sent to {}: {}", email, exception.getMessage());
+        }
     }
 }

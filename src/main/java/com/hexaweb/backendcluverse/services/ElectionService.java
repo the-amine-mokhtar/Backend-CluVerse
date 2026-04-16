@@ -8,6 +8,7 @@ import com.hexaweb.backendcluverse.repositories.ElectionRepository;
 import com.hexaweb.backendcluverse.repositories.PositionRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -36,7 +37,7 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
 
         boolean existsActive = electionRepository.existsByPositionIdAndStatusIn(
                 req.getPositionId(),
-                List.of(ElectionStatus.DRAFT, ElectionStatus.OPEN)
+                Arrays.asList(ElectionStatus.DRAFT, ElectionStatus.OPEN)
         );
         if (existsActive) {
             throw new RuntimeException("This position already has an active or draft election ongoing");
