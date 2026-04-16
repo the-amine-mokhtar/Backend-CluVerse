@@ -1,9 +1,11 @@
 package com.hexaweb.backendcluverse.controllers;
 
+import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
 import com.hexaweb.backendcluverse.entities.recruitement.Application;
 import com.hexaweb.backendcluverse.services.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import com.hexaweb.backendcluverse.dto.InterviewConfigRequest;
+import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -48,6 +53,19 @@ public class ApplicationController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         applicationService.deleteById(id);
+    }
+
+    @PostMapping("/{id}/interview")
+    public ResponseEntity<InterviewConfig> passToInterview(
+            @PathVariable Long id,
+            @RequestBody InterviewConfigRequest request) {
+        return ResponseEntity.ok(applicationService.passToInterview(
+                id,
+                request.getDuration(),
+                request.getLevel(),
+                request.getInterviewType(),
+                request.getPresidentNotes()
+        ));
     }
 }
 
