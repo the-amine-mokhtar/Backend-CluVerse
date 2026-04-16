@@ -48,7 +48,7 @@ public class ApplicationService extends EntityServiceImpl<Application, Long> {
     }
 
     private void sendInterviewEmail(Application application, String uniqueLink) {
-        String interviewUrl = "http://localhost:3000/interview/" + uniqueLink;
+        String interviewUrl = "http://localhost:4200/interview/" + uniqueLink;
         String subject = "Invitation à votre entretien - "
                 + application.getRecruitmentCampaign().getClub().getName();
         String body = "Bonjour " + application.getCandidateName() + ",\n\n"
