@@ -15,6 +15,7 @@ public class VoteDTO {
     private boolean isValid;
     private int voteWeight;
 
+    private Long voterId;
     private String voterName;
     private String positionName;
     private CandidateDTO candidate;

@@ -88,6 +88,20 @@ public class VoteController {
         voteService.deleteById(id);
     }
 
+    @GetMapping("/my")
+    public VoteDTO getMyVote(
+            @RequestParam Long electionId,
+            @RequestHeader("Authorization") String authHeader) {
+        String token = resolveToken(authHeader);
+        Long userId = jwtUtil.extractUserId(token);
+        List<Vote> votes = voteService.findByElectionId(electionId);
+        Vote myVote = votes.stream()
+                .filter(v -> v.getVoter() != null && v.getVoter().getId().equals(userId))
+                .findFirst()
+                .orElse(null);
+        return myVote != null ? mapToDTO(myVote) : null;
+    }
+
     @PostMapping("/{electionId}/test")
     public VoteTestResponse simulateVotes(
             @PathVariable Long electionId,
@@ -191,6 +205,7 @@ public class VoteController {
                 vote.getTimestamp(),
                 vote.isValid(),
                 vote.getVoteWeight(),
+                vote.getVoter() != null ? vote.getVoter().getId() : null,
                 vote.getVoter() != null ? vote.getVoter().getFirstName() + " " + vote.getVoter().getLastName() : null,
                 vote.getPosition() != null ? vote.getPosition().getName() : null,
                 mapToCandidateDTO(vote.getCandidate()),
