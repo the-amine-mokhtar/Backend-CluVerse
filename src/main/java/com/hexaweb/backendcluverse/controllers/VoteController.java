@@ -102,6 +102,17 @@ public class VoteController {
         return myVote != null ? mapToDTO(myVote) : null;
     }
 
+    @GetMapping("/my/all")
+    public List<VoteDTO> getMyVotes(
+            @RequestHeader("Authorization") String authHeader) {
+        String token = resolveToken(authHeader);
+        Long userId = jwtUtil.extractUserId(token);
+        return voteRepository.findByVoterId(userId)
+                .stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     @PostMapping("/{electionId}/test")
     public VoteTestResponse simulateVotes(
             @PathVariable Long electionId,
