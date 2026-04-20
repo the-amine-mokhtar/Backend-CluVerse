@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.entities.election;
+package com.hexaweb.backendcluverse.entities.recrutement;
 
 import jakarta.persistence.*;
 import lombok.Getter;

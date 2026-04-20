@@ -1,10 +1,10 @@
-package com.hexaweb.backendcluverse.controllers;
+package com.hexaweb.backendcluverse.controllers.recrutement;
 
 import com.hexaweb.backendcluverse.dto.AnswerDto;
 import com.hexaweb.backendcluverse.dto.ApplicationSubmissionDto;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Notification;
-import com.hexaweb.backendcluverse.entities.recruitement.*;
+import com.hexaweb.backendcluverse.entities.recrutement.*;
 import com.hexaweb.backendcluverse.repositories.*;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import jakarta.transaction.Transactional;

@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.entities.recruitement;
+package com.hexaweb.backendcluverse.entities.recrutement;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
@@ -7,10 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 
 @Entity
 @Getter
@@ -42,5 +42,7 @@ public class Application {
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ApplicationAnswer> answers = new ArrayList<>();
 
-}
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<InterviewConfig> interviewConfigs = new ArrayList<>();
 
+}
