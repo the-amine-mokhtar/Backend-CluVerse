@@ -1,7 +1,7 @@
-package com.hexaweb.backendcluverse.controllers;
+package com.hexaweb.backendcluverse.controllers.recrutement;
 
-import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
-import com.hexaweb.backendcluverse.entities.recruitement.Application;
+import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
+import com.hexaweb.backendcluverse.entities.recrutement.Application;
 import com.hexaweb.backendcluverse.services.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import com.hexaweb.backendcluverse.dto.InterviewConfigRequest;
-import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.repositories;
 
-import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
+import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

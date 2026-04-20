@@ -1,6 +1,6 @@
-package com.hexaweb.backendcluverse.controllers;
+package com.hexaweb.backendcluverse.controllers.recrutement;
 
-import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
+import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
 import com.hexaweb.backendcluverse.services.InterviewConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -40,5 +40,10 @@ public class InterviewConfigController {
     @GetMapping("/application/{applicationId}/result")
     public ResponseEntity<?> getResult(@PathVariable Long applicationId) {
         return ResponseEntity.ok(interviewConfigService.getInterviewResult(applicationId));
+    }
+
+    @GetMapping("/application/{applicationId}/messages")
+    public ResponseEntity<?> getMessages(@PathVariable Long applicationId) {
+        return ResponseEntity.ok(interviewConfigService.getInterviewMessages(applicationId));
     }
 }

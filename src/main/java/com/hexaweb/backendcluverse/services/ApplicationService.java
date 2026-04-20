@@ -1,11 +1,10 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
-import com.hexaweb.backendcluverse.entities.recruitement.Application;
+import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
+import com.hexaweb.backendcluverse.entities.recrutement.Application;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import com.hexaweb.backendcluverse.repositories.ApplicationRepository;
 import com.hexaweb.backendcluverse.repositories.InterviewConfigRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

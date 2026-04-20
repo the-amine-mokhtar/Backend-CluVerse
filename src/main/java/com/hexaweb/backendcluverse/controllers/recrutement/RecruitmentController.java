@@ -1,10 +1,10 @@
-package com.hexaweb.backendcluverse.controllers;
+package com.hexaweb.backendcluverse.controllers.recrutement;
 
 import com.hexaweb.backendcluverse.dto.AnswerDto;
 import com.hexaweb.backendcluverse.dto.ApplicationSubmissionDto;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Notification;
-import com.hexaweb.backendcluverse.entities.recruitement.*;
+import com.hexaweb.backendcluverse.entities.recrutement.*;
 import com.hexaweb.backendcluverse.repositories.*;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import jakarta.transaction.Transactional;
@@ -20,8 +20,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.ChronoLocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

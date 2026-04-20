@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.controllers;
+package com.hexaweb.backendcluverse.controllers.recrutement;
 
 import com.hexaweb.backendcluverse.services.GroqService;
 import com.hexaweb.backendcluverse.services.InterviewPromptService;

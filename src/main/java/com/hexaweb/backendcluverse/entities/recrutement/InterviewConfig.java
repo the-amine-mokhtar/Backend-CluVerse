@@ -1,6 +1,5 @@
-package com.hexaweb.backendcluverse.entities.election;
+package com.hexaweb.backendcluverse.entities.recrutement;
 
-import com.hexaweb.backendcluverse.entities.recruitement.Application;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;

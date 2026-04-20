@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.election.InterviewConfig;
+import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
 import com.hexaweb.backendcluverse.repositories.InterviewConfigRepository;
 import com.hexaweb.backendcluverse.repositories.ApplicationRepository;
 import lombok.RequiredArgsConstructor;
@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -70,5 +71,19 @@ public class InterviewConfigService {
         }
 
         return result;
+    }
+
+    public List<Map<String, Object>> getInterviewMessages(Long applicationId) {
+        InterviewConfig config = interviewConfigRepository
+                .findTopByApplicationIdOrderByCreatedAtDesc(applicationId)
+                .orElseThrow(() -> new RuntimeException("Interview config not found"));
+
+        return jdbcTemplate.queryForList(
+                "SELECT role, text, elapsed_sec FROM interview_messages " +
+                        "WHERE session_id = (SELECT id FROM interview_sessions " +
+                        "WHERE club_id = ? AND status = 'ended' ORDER BY created_at DESC LIMIT 1) " +
+                        "ORDER BY timestamp_ms ASC",
+                config.getApplication().getRecruitmentCampaign().getClub().getId()
+        );
     }
 }
