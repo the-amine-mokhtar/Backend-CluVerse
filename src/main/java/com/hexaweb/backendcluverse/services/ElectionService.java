@@ -161,4 +161,25 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
                 rankedCandidates
         );
     }
+
+    @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 0 * * *")
+    public void closeExpiredElections() {
+        System.out.println("Running scheduled task: Closing expired elections.");
+        List<Election> openElections = electionRepository.findAll().stream()
+                .filter(e -> e.getStatus() == ElectionStatus.OPEN)
+                .toList();
+
+        LocalDate today = LocalDate.now();
+        for (Election election : openElections) {
+            LocalDate endDate = election.getEndDate();
+            if (endDate != null && endDate.isBefore(today)) {
+                try {
+                    System.out.println("Auto-closing election ID: " + election.getId());
+                    closeElection(election.getId());
+                } catch (Exception e) {
+                    System.err.println("Failed to auto-close election ID: " + election.getId() + ". Error: " + e.getMessage());
+                }
+            }
+        }
+    }
 }
