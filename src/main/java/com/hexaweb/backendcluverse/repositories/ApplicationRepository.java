@@ -14,4 +14,3 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     long countByRecruitmentCampaignId(Long campaignId);
 
 }
-

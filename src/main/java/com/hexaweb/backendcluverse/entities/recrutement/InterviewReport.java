@@ -1,8 +1,16 @@
 package com.hexaweb.backendcluverse.entities.recrutement;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "interview_report")
 public class InterviewReport {
 

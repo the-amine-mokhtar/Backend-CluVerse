@@ -46,4 +46,3 @@ public class Application {
     private List<InterviewConfig> interviewConfigs = new ArrayList<>();
 
 }
-
