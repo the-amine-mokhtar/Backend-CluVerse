@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.controllers.Competencies;
 
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyMatchingRequest;
+import com.hexaweb.backendcluverse.dto.Competencies         .CompetencyMatchingRequest;
 import com.hexaweb.backendcluverse.dto.Competencies.CompetencyMatchingResponse;
 import com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyGapResponse;
 import com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyRequest;

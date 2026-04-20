@@ -7,17 +7,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class MemberCompetencyUpdateRequest {
+public class LevelUpdateRequest {
 
     @NotNull
     @Min(0)
     @Max(5)
-    private Integer currentLevel;
+    private Integer newLevel;
 
-    @NotNull
-    @Min(0)
-    @Max(5)
-    private Integer targetLevel;
-
-    private UpdateSource lastUpdatedBy;
+    private UpdateSource source;
 }
