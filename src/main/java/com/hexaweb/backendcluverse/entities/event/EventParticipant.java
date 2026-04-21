@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.enumerations.ParticipationStatus;
+import com.hexaweb.backendcluverse.enumerations.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

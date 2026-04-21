@@ -1,5 +1,6 @@
 package com.hexaweb.backendcluverse.entities.event;
 
+import com.hexaweb.backendcluverse.enumerations.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;

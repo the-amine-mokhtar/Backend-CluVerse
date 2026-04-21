@@ -1,6 +1,7 @@
 package com.hexaweb.backendcluverse.repositories;
 
 import com.hexaweb.backendcluverse.entities.event.EventPayment;
+import com.hexaweb.backendcluverse.enumerations.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
