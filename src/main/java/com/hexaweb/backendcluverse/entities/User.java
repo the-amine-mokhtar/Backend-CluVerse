@@ -6,13 +6,7 @@ import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.entities.recruitement.Application;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
 import com.hexaweb.backendcluverse.entities.skills.UserSkill;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,7 +42,9 @@ public class User {
     @JsonIgnore
     private List<UserSkill> userSkills = new ArrayList<>();
 
-
+    @ManyToOne
+    @JoinColumn(name = "club_id")
+    private Club club;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore

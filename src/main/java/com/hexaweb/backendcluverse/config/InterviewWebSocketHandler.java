@@ -25,4 +25,3 @@ public class InterviewWebSocketHandler extends TextWebSocketHandler {
         // No cleanup yet; hook point for session tracking if needed.
     }
 }
-
