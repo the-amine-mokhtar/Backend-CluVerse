@@ -216,6 +216,30 @@ public class MemberCompetencyService {
         return getById(saved.getId());
     }
 
+    @Transactional
+    public void progressFromLiveSession(Long userId, Long competencyId) {
+        MemberCompetency memberCompetency = memberCompetencyRepository.findByUserIdAndSkillId(userId, competencyId)
+                .orElse(null);
+
+        if (memberCompetency == null) {
+            return;
+        }
+
+        int current = memberCompetency.getCurrentLevel();
+        int target = memberCompetency.getTargetLevel();
+        if (current >= target) {
+            return;
+        }
+
+        memberCompetency.setPreviousLevel(current);
+        memberCompetency.setCurrentLevel(Math.min(5, current + 1));
+        memberCompetency.setLastUpdatedBy(UpdateSource.LIVE_SESSION);
+        memberCompetencyRepository.save(memberCompetency);
+        badgeEvaluationService.checkAndAward(userId, UpdateSource.LIVE_SESSION);
+        log.info("Live session progression userId={} competencyId={} : {} -> {}",
+                userId, competencyId, current, memberCompetency.getCurrentLevel());
+    }
+
     @Transactional(readOnly = true)
     public ClubCompetencyStats getStats(Long clubId) {
         List<MemberCompetency> all = memberCompetencyRepository.findByClubId(clubId);

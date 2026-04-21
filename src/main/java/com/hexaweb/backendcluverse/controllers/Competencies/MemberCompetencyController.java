@@ -1,7 +1,10 @@
 package com.hexaweb.backendcluverse.controllers.Competencies;
 
-import com.hexaweb.backendcluverse.dto.Competencies         .CompetencyMatchingRequest;
+import com.hexaweb.backendcluverse.dto.Competencies.BulkTargetRequest;
+import com.hexaweb.backendcluverse.dto.Competencies.ClubCompetencyStats;
+import com.hexaweb.backendcluverse.dto.Competencies.CompetencyMatchingRequest;
 import com.hexaweb.backendcluverse.dto.Competencies.CompetencyMatchingResponse;
+import com.hexaweb.backendcluverse.dto.Competencies.LevelUpdateRequest;
 import com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyGapResponse;
 import com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyRequest;
 import com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyResponse;
@@ -16,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/member-competencies")
@@ -43,9 +48,19 @@ public class MemberCompetencyController {
         return ResponseEntity.ok(memberCompetencyService.getByUser(userId));
     }
 
+    @GetMapping("/member/{userId}")
+    public ResponseEntity<List<MemberCompetencyResponse>> getByUserMemberAlias(@PathVariable Long userId) {
+        return ResponseEntity.ok(memberCompetencyService.getByUser(userId));
+    }
+
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<MemberCompetencyResponse>> getByClub(@PathVariable Long clubId) {
         return ResponseEntity.ok(memberCompetencyService.getByClub(clubId));
+    }
+
+    @GetMapping("/club/{clubId}/stats")
+    public ResponseEntity<ClubCompetencyStats> getStats(@PathVariable Long clubId) {
+        return ResponseEntity.ok(memberCompetencyService.getStats(clubId));
     }
 
     @GetMapping("/{id}")
@@ -68,6 +83,25 @@ public class MemberCompetencyController {
     @PostMapping("/{id}/endorse")
     public ResponseEntity<MemberCompetencyResponse> endorse(@PathVariable Long id) {
         return ResponseEntity.ok(memberCompetencyService.endorse(id));
+    }
+
+    @PatchMapping("/{userId}/competency/{competencyId}/level")
+    public ResponseEntity<MemberCompetencyResponse> updateLevel(@PathVariable Long userId,
+                                                                @PathVariable Long competencyId,
+                                                                @Valid @RequestBody LevelUpdateRequest request) {
+        return ResponseEntity.ok(memberCompetencyService.updateLevel(userId, competencyId, request));
+    }
+
+    @PatchMapping("/{userId}/competency/{competencyId}/endorse")
+    public ResponseEntity<MemberCompetencyResponse> endorseByCompetency(@PathVariable Long userId,
+                                                                         @PathVariable Long competencyId) {
+        return ResponseEntity.ok(memberCompetencyService.addEndorsement(userId, competencyId));
+    }
+
+    @PatchMapping("/bulk-target")
+    public ResponseEntity<Map<String, Integer>> bulkSetTarget(@Valid @RequestBody BulkTargetRequest request) {
+        int updated = memberCompetencyService.bulkSetTarget(request);
+        return ResponseEntity.ok(Map.of("updated", updated));
     }
 
     @GetMapping("/{id}/gap")

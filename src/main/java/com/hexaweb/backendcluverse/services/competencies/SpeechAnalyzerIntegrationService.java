@@ -33,26 +33,31 @@ public class SpeechAnalyzerIntegrationService {
     }
 
     public SpeechAnalyzerHealthResponse getHealth() {
-        JsonNode healthNode = webClient.post()
-                .uri("/health")
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, response -> response.bodyToMono(String.class)
-                        .flatMap(body -> Mono.error(new ResponseStatusException(
-                                HttpStatus.BAD_GATEWAY,
-                                "Speech analyzer health call failed: " + body
-                        ))))
-                .bodyToMono(JsonNode.class)
-                .block(Duration.ofSeconds(12));
+        try {
+            JsonNode healthNode = webClient.post()
+                    .uri("/health")
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, response -> response.bodyToMono(String.class)
+                            .flatMap(body -> Mono.error(new ResponseStatusException(
+                                    HttpStatus.BAD_GATEWAY,
+                                    "Speech analyzer health call failed: " + body
+                            ))))
+                    .bodyToMono(JsonNode.class)
+                    .block(Duration.ofSeconds(12));
 
-        if (healthNode == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Empty health response from speech analyzer");
+            if (healthNode == null) {
+                return new SpeechAnalyzerHealthResponse("degraded", false, "unknown");
+            }
+
+            return new SpeechAnalyzerHealthResponse(
+                    healthNode.path("status").asText("degraded"),
+                    healthNode.path("whisper_loaded").asBoolean(false),
+                    healthNode.path("model_version").asText("unknown")
+            );
+        } catch (RuntimeException ex) {
+            log.warn("Speech analyzer health unreachable, returning degraded state: {}", ex.getMessage());
+            return new SpeechAnalyzerHealthResponse("degraded", false, "unavailable");
         }
-
-        return new SpeechAnalyzerHealthResponse(
-                healthNode.path("status").asText("degraded"),
-                healthNode.path("whisper_loaded").asBoolean(false),
-                healthNode.path("model_version").asText("unknown")
-        );
     }
 
     public SpeechAnalyzerSyncResponse syncSessionReportToCompetency(Long memberCompetencyId, String sessionId) {
@@ -102,6 +107,39 @@ public class SpeechAnalyzerIntegrationService {
                 updatedCompetency
         );
     }
+
+        public String buildSessionReportSummary(String sessionId) {
+                if (sessionId == null || sessionId.isBlank()) {
+                        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "sessionId is required");
+                }
+
+                JsonNode reportNode;
+                try {
+                        reportNode = fetchReport(sessionId, Duration.ofSeconds(20));
+                } catch (RuntimeException ex) {
+                        if (!isTimeout(ex)) {
+                                throw ex;
+                        }
+                        log.warn("Speech analyzer report timed out for sessionId={}, retrying once", sessionId);
+                        reportNode = fetchReport(sessionId, Duration.ofSeconds(45));
+                }
+
+                if (reportNode == null) {
+                        throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Empty report response from speech analyzer");
+                }
+
+                JsonNode scoreNode = reportNode.path("score");
+                double globalScore = scoreNode.path("global_score").asDouble(0.0);
+                String level = scoreNode.path("level").asText("INTERMEDIATE");
+                String feedback = reportNode.path("feedback").asText("").trim();
+
+                String header = String.format("AI Session Report: score=%.2f/100, level=%s", globalScore, level);
+                if (feedback.isBlank()) {
+                        return header;
+                }
+
+                return header + "\n" + feedback;
+        }
 
         private JsonNode fetchReport(String sessionId, Duration timeout) {
                 return webClient.post()
