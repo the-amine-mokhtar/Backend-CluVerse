@@ -5,6 +5,7 @@ import com.hexaweb.backendcluverse.dto.SponsorshipDto;
 import com.hexaweb.backendcluverse.dto.UpdateSponsorshipRequest;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.event.Event;
+import com.hexaweb.backendcluverse.entities.sponsoring.SponsorEmail;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
 import com.hexaweb.backendcluverse.enumerations.SponsorEmailDirection;
@@ -221,6 +222,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
                 String declineLink = "http://localhost:" + serverPort + "/api/sponsorships/respond/decline?token=" + token;
 
                 sendOutreachEmailAsync(
+                    saved.getId(),
                         sponsor.getContactEmail(),
                         sponsor.getName(),
                         subject,
@@ -235,6 +237,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
     }
 
     private void sendOutreachEmailAsync(
+            Long sponsorshipId,
             String to,
             String sponsorName,
             String subject,
@@ -246,6 +249,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
             try {
                 String body = summary + "\n\nPlease respond by clicking one of the options below.";
                 sendHtmlEmailWithOptionalAttachment(
+                    sponsorshipId,
                         to,
                         sponsorName,
                         subject,
@@ -599,6 +603,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
         byte[] pdf = generateContractPdf(sponsorship);
         saveContractPdfToDisk(fileName, pdf);
         sendHtmlEmailWithOptionalAttachment(
+            sponsorship.getId(),
             sponsor.getContactEmail(),
             sponsor.getName(),
             subject,
@@ -656,6 +661,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
     }
 
     private void sendHtmlEmailWithOptionalAttachment(
+            Long sponsorshipId,
             String to,
             String sponsorName,
             String subject,
@@ -721,9 +727,90 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
                 helper.addAttachment(attachmentName, new ByteArrayResource(attachment), "application/pdf");
             }
             mailSender.send(message);
+            persistTrackedSponsorshipEmail(
+                    sponsorshipId,
+                    subject,
+                    body,
+                    to,
+                    attachmentName,
+                    primaryActionLabel,
+                    primaryActionUrl,
+                    secondaryActionLabel,
+                    secondaryActionUrl
+            );
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send sponsorship email", e);
         }
+    }
+
+    private void persistTrackedSponsorshipEmail(
+            Long sponsorshipId,
+            String subject,
+            String body,
+            String to,
+            String attachmentName,
+            String primaryActionLabel,
+            String primaryActionUrl,
+            String secondaryActionLabel,
+            String secondaryActionUrl
+    ) {
+        if (sponsorshipId == null) {
+            return;
+        }
+
+        try {
+            Optional<Sponsorship> sponsorshipOpt = sponsorshipRepository.findById(sponsorshipId);
+            if (sponsorshipOpt.isEmpty()) {
+                return;
+            }
+
+            Sponsorship sponsorship = sponsorshipOpt.get();
+            Sponsor sponsor = sponsorship.getSponsor();
+            Club club = sponsorship.getClub();
+            if (sponsor == null || club == null) {
+                return;
+            }
+
+            SponsorEmail tracked = new SponsorEmail();
+            tracked.setSponsor(sponsor);
+            tracked.setClub(club);
+            tracked.setDirection(SponsorEmailDirection.OUTBOUND);
+            tracked.setSentAt(LocalDateTime.now());
+            tracked.setPinned(false);
+            tracked.setFromAddress(firstNonBlank(fromAddress, ""));
+            tracked.setToAddress(firstNonBlank(to, ""));
+            tracked.setSubject(firstNonBlank(subject, "Sponsorship Update"));
+            tracked.setBody(buildTrackedBody(body, attachmentName, primaryActionLabel, primaryActionUrl, secondaryActionLabel, secondaryActionUrl));
+
+            sponsorEmailRepository.save(tracked);
+        } catch (Exception ignored) {
+            // Email tracking should not break sponsorship workflow.
+        }
+    }
+
+    private String buildTrackedBody(
+            String body,
+            String attachmentName,
+            String primaryActionLabel,
+            String primaryActionUrl,
+            String secondaryActionLabel,
+            String secondaryActionUrl
+    ) {
+        StringBuilder builder = new StringBuilder(firstNonBlank(body, ""));
+
+        if (hasText(attachmentName)) {
+            builder.append("\n\nAttachment: ").append(attachmentName);
+        }
+
+        if (hasText(primaryActionLabel) && hasText(primaryActionUrl)) {
+            builder.append("\n").append(primaryActionLabel).append(": ").append(primaryActionUrl);
+        }
+
+        if (hasText(secondaryActionLabel) && hasText(secondaryActionUrl)) {
+            builder.append("\n").append(secondaryActionLabel).append(": ").append(secondaryActionUrl);
+        }
+
+        return builder.toString();
     }
 
     private byte[] generateContractPdf(Sponsorship sponsorship) {
