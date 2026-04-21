@@ -1,11 +1,8 @@
-package com.hexaweb.backendcluverse.entities.finance;
+package com.hexaweb.backendcluverse.entities.logistics;
 
-import java.time.LocalDate;
-
-import com.hexaweb.backendcluverse.entities.Club;
-import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
-import com.hexaweb.backendcluverse.enumerations.TransactionType;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.hexaweb.backendcluverse.enumerations.InventoryTransactionType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -20,29 +17,28 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Transaction {
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class InventoryTransaction {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private double amount;
-    private LocalDate date;
-    private String description;
-
     @Enumerated(EnumType.STRING)
-    private TransactionType type;
+    private InventoryTransactionType type;
+    
+    private int quantity;
+    private LocalDateTime date;
+    private String reason;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "club_id", nullable = false)
-    private Club club;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sponsor_id")
-    private Sponsor sponsor;
+    @JoinColumn(name = "resource_id", nullable = false)
+    @JsonIgnore
+    private Resource resource;
 }
-

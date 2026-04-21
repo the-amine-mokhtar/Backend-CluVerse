@@ -1,8 +1,14 @@
 package com.hexaweb.backendcluverse.entities.sponsoring;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.enumerations.SponsorStatus;
+import com.hexaweb.backendcluverse.entities.finance.Transaction;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,12 +25,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Getter
 @Setter
@@ -57,5 +57,9 @@ public class Sponsor {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id")
     private Club club;
+
+    @OneToMany(mappedBy = "sponsor", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Transaction> transactions = new ArrayList<>();
 }
 
