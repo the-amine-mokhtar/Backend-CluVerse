@@ -35,13 +35,14 @@ public class ReservationController {
     }
 
     @PostMapping
-    public Reservation create(@RequestBody com.hexaweb.backendcluverse.dto.ReservationRequest request) {
-        return reservationService.createReservation(request);
+    public Reservation create(@RequestBody Reservation reservation) {
+        return reservationService.save(reservation);
     }
 
     @PutMapping("/{id}")
-    public Reservation update(@PathVariable Long id, @RequestBody com.hexaweb.backendcluverse.dto.ReservationRequest request) {
-        return reservationService.updateReservation(id, request);
+    public Reservation update(@PathVariable Long id, @RequestBody Reservation reservation) {
+        reservation.setId(id);
+        return reservationService.save(reservation);
     }
 
     @DeleteMapping("/{id}")

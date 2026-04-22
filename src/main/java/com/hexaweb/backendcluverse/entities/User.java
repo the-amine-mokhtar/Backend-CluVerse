@@ -1,6 +1,7 @@
 package com.hexaweb.backendcluverse.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.election.Candidate;
 import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
@@ -22,8 +23,6 @@ import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 @Entity
 @Getter
 @Setter
@@ -42,17 +41,13 @@ public class User {
     private String password;
     private String phone;
     private String photoUrl;
+    @JsonIgnore
+    private String googleCalendarRefreshToken;
     private boolean isSuperAdmin = false;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Membership> memberships = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<UserSkill> userSkills = new ArrayList<>();
-
-
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
@@ -65,13 +60,4 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<EventParticipant> eventParticipants = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Reservation> reservations = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Transport> transports = new ArrayList<>();
 }
-
