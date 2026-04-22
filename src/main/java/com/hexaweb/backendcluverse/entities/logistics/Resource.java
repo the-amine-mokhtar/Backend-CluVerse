@@ -1,6 +1,10 @@
 package com.hexaweb.backendcluverse.entities.logistics;
 
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.event.Reservation;
+import com.hexaweb.backendcluverse.enumerations.ResourceStatus;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -24,7 +28,10 @@ public class Resource {
     private Long id;
 
     private String name;
-    private int quantity;
+
+    @Column(unique = true, nullable = false)
+    private String barcode;
+
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

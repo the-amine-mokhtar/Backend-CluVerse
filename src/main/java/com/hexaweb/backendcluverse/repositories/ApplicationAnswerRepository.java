@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.repositories;
 
-import com.hexaweb.backendcluverse.entities.recruitement.ApplicationAnswer;
+import com.hexaweb.backendcluverse.entities.recrutement.ApplicationAnswer;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

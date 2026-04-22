@@ -10,18 +10,13 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 public class InterviewWebSocketHandler extends TextWebSocketHandler {
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        session.sendMessage(new TextMessage("WebSocket connected"));
-    }
-
-    @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        // Echo messages for now so the endpoint is functional during local development.
-        session.sendMessage(new TextMessage("Echo: " + message.getPayload()));
+        // Echo messages to keep endpoint functional until custom interview flow is added.
+        session.sendMessage(new TextMessage(message.getPayload()));
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        // No cleanup yet; hook point for session tracking if needed.
+        super.afterConnectionClosed(session, status);
     }
 }

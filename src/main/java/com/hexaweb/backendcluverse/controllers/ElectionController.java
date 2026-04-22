@@ -1,6 +1,7 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.hexaweb.backendcluverse.dto.ElectionCloseResponseDTO;
 import com.hexaweb.backendcluverse.dto.ElectionRequest;
 import com.hexaweb.backendcluverse.entities.election.Election;
 import com.hexaweb.backendcluverse.services.ElectionService;
@@ -62,6 +63,25 @@ public class ElectionController {
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
         electionService.deleteById(id);
+    }
+
+    @PostMapping("/{id}/close")
+    public ElectionCloseResponseDTO closeElection(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        try {
+            return electionService.closeElection(id);
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}/close")
+    public ElectionCloseResponseDTO closeElectionPut(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String authHeader) {
+        return closeElection(id, authHeader);
     }
 
     private String resolveToken(String authHeader) {

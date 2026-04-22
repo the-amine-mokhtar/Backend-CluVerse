@@ -22,6 +22,11 @@ public class InventoryTransactionController {
         return transactionService.findAll();
     }
 
+    @GetMapping("/resource/{resourceId}")
+    public List<InventoryTransaction> getByResource(@PathVariable Long resourceId) {
+        return transactionService.findByResourceId(resourceId);
+    }
+
     @GetMapping("/{id}")
     public InventoryTransaction getById(@PathVariable Long id) {
         return transactionService.findById(id)
@@ -40,6 +45,6 @@ public class InventoryTransactionController {
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        transactionService.deleteById(id);
+        transactionService.deleteTransaction(id);
     }
 }
