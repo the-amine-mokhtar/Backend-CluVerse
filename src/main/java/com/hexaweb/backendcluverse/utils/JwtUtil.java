@@ -1,12 +1,13 @@
 package com.hexaweb.backendcluverse.utils;
 
+import java.util.Date;
+
+import org.springframework.stereotype.Component;
+
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.hexaweb.backendcluverse.entities.User;
-import org.springframework.stereotype.Component;
-
-import java.util.Date;
 
 @Component
 public class JwtUtil {
@@ -41,8 +42,7 @@ public class JwtUtil {
     }
 
     public Long extractUserId(String token) {
-        String subject = extractDecodedJWT(token).getSubject();
-        return Long.parseLong(subject);
+        return Long.parseLong(extractDecodedJWT(token).getSubject());
     }
 
     public Long extractClubId(String token) {
@@ -56,6 +56,18 @@ public class JwtUtil {
     public boolean extractIsSuperAdmin(String token) {
         Boolean val = extractDecodedJWT(token).getClaim("isSuperAdmin").asBoolean();
         return val != null && val;
+    }
+
+    public String extractEmail(String token) {
+        return extractDecodedJWT(token).getClaim("email").asString();
+    }
+
+    public String extractFirstName(String token) {
+        return extractDecodedJWT(token).getClaim("firstName").asString();
+    }
+
+    public String extractLastName(String token) {
+        return extractDecodedJWT(token).getClaim("lastName").asString();
     }
 
     public String resolveBearerToken(String authHeader) {
