@@ -1,6 +1,5 @@
 package com.hexaweb.backendcluverse.validators;
 
-import com.hexaweb.backendcluverse.dto.EventRequest;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.ElementType;

@@ -7,7 +7,6 @@ import com.hexaweb.backendcluverse.enumerations.RoleType;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.MembershipRepository;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
-import com.hexaweb.backendcluverse.services.VerificationService;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -23,9 +22,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/clubs")
 public class VerificationController {
-
-    @Autowired
-    private VerificationService verificationService;
 
     @Autowired
     private ClubRepository clubRepository;

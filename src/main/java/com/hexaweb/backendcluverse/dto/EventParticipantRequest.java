@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -39,10 +38,4 @@ public class EventParticipantRequest {
     private String dietaryRequirements;   // régime alimentaire / besoins spéciaux
     private String emergencyContact;      // contact d'urgence
     private String teamName;              // pour hackathons / events en équipe
-    private String paymentMethod;      // CARD, STRIPE, PAYPAL
-    private BigDecimal totalAmount;    // Montant à payer
-    private String cardNumber;
-    private String cardName;
-    private String expiryDate;
-    private String cvv;
 }

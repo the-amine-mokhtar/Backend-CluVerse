@@ -22,4 +22,12 @@ public class CloudinaryService {
         );
         return (String) result.get("secure_url");
     }
+
+    public String uploadCampaignImage(MultipartFile file) throws IOException {
+        Map result = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap("folder", "cluverse/campaigns")
+        );
+        return (String) result.get("secure_url");
+    }
 }

@@ -1,6 +1,8 @@
 package com.hexaweb.backendcluverse.entities.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
 import com.hexaweb.backendcluverse.enumerations.EventCategory;
@@ -11,13 +13,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_event_campaign_id", columnList = "campaign_id"),
+    @Index(name = "idx_event_club_id", columnList = "club_id"),
+    @Index(name = "idx_event_status", columnList = "status")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,16 +35,24 @@ public class Event {
     private String imageUrl;
     private String title;
     private String description;
-    private String location;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-    private Integer capacity;
-    @Enumerated(EnumType.STRING)
-    private EventStatus status;
-    @Enumerated(EnumType.STRING)
-    private EventCategory category;
-    // Event.java
+    @Column(name = "participants_count")
     private Integer participantsCount = 0;
+
+    @Column(name = "capacity")
+    private Integer capacity = 0;    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventStatus status = EventStatus.PLANNED;
+  @Column(name = "category")
+private String category;
+    // Event.java
+
+
+    // Location
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private Location location;
 
     //  Club (obligatoire)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -61,17 +74,40 @@ public class Event {
     private LocalDateTime deletedAt;
     //  Campaign (OPTIONNELLE)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "campaign_id", nullable = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "events", "campaignAccesses"})
     private Campaign campaign;
     private Boolean isPaid = false;
     private Double price;
+    private Boolean reminderSent = false;
+    private String currency = "EUR";
 
-    // Coordonnées GPS pour la carte
-    private Double latitude;
-    private Double longitude;
+    // ── Propriétés transientes exposées en JSON ──
+    @Transient
+    @JsonProperty("locationName")
+    public String getLocationName() {
+        return location != null ? location.getName() : null;
+    }
+
+    @Transient
+    @JsonProperty("locationAddress")
+    public String getLocationAddress() {
+        return location != null ? location.getAddress() : null;
+    }
+
+    @Transient
+    @JsonProperty("locationLatitude")
+    public String getLocationLatitude() {
+        return location != null ? location.getLatitude() : null;
+    }
+
+    @Transient
+    @JsonProperty("locationLongitude")
+    public String getLocationLongitude() {
+        return location != null ? location.getLongitude() : null;
+    }
 
     // ── Méthodes utilitaires ──
-    
+
     /**
      * Obtient le statut de disponibilité de l'événement par rapport à sa capacité
      * @return "AVAILABLE", "LIMITED_SEATS", ou "FULL"
@@ -103,11 +139,11 @@ public class Event {
     /**
      * Obtient le nombre de places disponibles
      */
-    public Integer getAvailableSeats() {
-        if (capacity == null || capacity <= 0) {
-            return -1; // Capacité illimitée
-        }
-        return Math.max(0, capacity - participantsCount);
+    public int getAvailableSeats() {
+        int count = participantsCount != null ? participantsCount : 0;
+        int cap   = capacity         != null ? capacity          : 0;
+        if (cap <= 0) return Integer.MAX_VALUE; // illimité
+        return Math.max(0, cap - count);
     }
 }
 

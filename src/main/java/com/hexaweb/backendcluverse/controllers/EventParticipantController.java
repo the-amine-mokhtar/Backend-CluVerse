@@ -1,142 +1,194 @@
 package com.hexaweb.backendcluverse.controllers;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.hexaweb.backendcluverse.dto.EventParticipantRequest;
-import com.hexaweb.backendcluverse.entities.User;
-import com.hexaweb.backendcluverse.entities.event.Event;
+import com.hexaweb.backendcluverse.dto.WaitingListDto;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
-import com.hexaweb.backendcluverse.repositories.EventParticipantRepository;
-import com.hexaweb.backendcluverse.repositories.EventRepository;
-import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.services.EventParticipantService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/participants")
 @RequiredArgsConstructor
-@SecurityRequirement(name = "BearerAuth")
 public class EventParticipantController {
-    private final UserRepository userRepository;
-    private final EventRepository eventRepository;
+
     private final EventParticipantService participantService;
-    private final JwtUtil jwtUtil;
-    private final EventParticipantRepository eventParticipantRepository;
+    private final JwtUtil                 jwtUtil;
 
-    // ─── GET tous les participants (admin) ────────────────────────────────────
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private Long resolveUserId(String auth) {
+        return jwtUtil.extractUserId(jwtUtil.resolveBearerToken(auth));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // ✅ NEW: UNIFIED PARTICIPATE — single endpoint for joining an event.
+    //
+    // The backend handles everything:
+    //   - place available  → register + confirmation SMS → returns "REGISTERED"
+    //   - event full       → waiting list + waiting SMS  → returns "WAITING_LIST_ADDED"
+    //   - already joined   → 409 CONFLICT
+    //
+    // Frontend just calls this, reads the status, and shows the right UI.
+    // No more requestParticipation → separate form → separate POST flow.
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @PostMapping("/participate/{eventId}")
+    public ResponseEntity<Map<String, String>> participate(
+            @PathVariable Long eventId,
+            @RequestBody EventParticipantRequest req,
+            @RequestHeader("Authorization") String auth) {
+
+        Long userId = resolveUserId(auth);
+        String status = participantService.participate(eventId, userId, req);
+
+        return ResponseEntity.ok(Map.of("status", status));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET ALL — by eventId OR current user's participations
+    // ═══════════════════════════════════════════════════════════════════════════
+
     @GetMapping
-    @Operation(summary = "Get all participants, optionally filtered by eventId")
-    public List<EventParticipant> getParticipants(
+    public List<EventParticipant> getAll(
             @RequestParam(required = false) Long eventId,
-            @RequestHeader("Authorization") String authHeader) {
-        resolveToken(authHeader);
-        return eventId != null
-                ? participantService.findByEventId(eventId)
-                : participantService.findAll();
+            @RequestHeader("Authorization") String auth) {
+
+        if (eventId != null) {
+            return participantService.findByEventId(eventId);
+        }
+        return participantService.findByUserId(resolveUserId(auth));
     }
 
-    // ─── GET events du club de l'utilisateur connecté ─────────────────────────
-    @GetMapping("/my-club-events")
-    @Operation(summary = "Get all events of my club")
-    public List<Event> getMyClubEvents(
-            @RequestHeader("Authorization") String authHeader) {
-        String token = resolveToken(authHeader);
-        Long clubId = jwtUtil.extractClubId(token);
-        return eventRepository.findByClubId(clubId);
-    }
+    // ═══════════════════════════════════════════════════════════════════════════
+    // GET ONE
+    // ═══════════════════════════════════════════════════════════════════════════
 
-    // ─── GET mes participations ────────────────────────────────────────────────
-    @GetMapping("/my-events")
-    @Operation(summary = "Get my own participations")
-    public List<EventParticipant> getMyParticipations(
-            @RequestHeader("Authorization") String authHeader) {
-
-        String token = resolveToken(authHeader);
-        Long userId = jwtUtil.extractUserId(token);
-
-        return participantService.findByUserId(userId);
-    }
-    // ─── GET par ID ────────────────────────────────────────────────────────────
     @GetMapping("/{id}")
-    @Operation(summary = "Get one participation by ID")
-    public EventParticipant getParticipantById(
-            @PathVariable Long id,
-            @RequestHeader("Authorization") String authHeader) {
-        resolveToken(authHeader);
+    public EventParticipant getById(@PathVariable Long id) {
         return participantService.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participation not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Participation not found"));
     }
 
-    // ─── POST participer ───────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CREATE — direct (legacy, kept for compatibility)
+    // ═══════════════════════════════════════════════════════════════════════════
+
     @PostMapping
-    @Operation(summary = "Register to an event")
-    public ResponseEntity<EventParticipant> addParticipant(
-            @Valid @RequestBody EventParticipantRequest request,
-            @RequestHeader("Authorization") String authHeader) {
-        String token = resolveToken(authHeader);
-        // ✅ On injecte l'userId depuis le token — le frontend n'a pas à l'envoyer
-        Long userId = jwtUtil.extractUserId(token);
-        request.setUserId(userId);
-        EventParticipant saved = participantService.addParticipant(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    @ResponseStatus(HttpStatus.CREATED)
+    public EventParticipant create(@RequestBody EventParticipantRequest req,
+                                   @RequestHeader("Authorization") String auth) {
+        req.setUserId(resolveUserId(auth));
+        return participantService.addParticipant(req);
     }
 
-    // ─── PUT modifier ──────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // UPDATE
+    // ═══════════════════════════════════════════════════════════════════════════
+
     @PutMapping("/{id}")
-    @Operation(summary = "Update a participation")
-    public ResponseEntity<EventParticipant> updateParticipant(
-            @PathVariable Long id,
-            @Valid @RequestBody EventParticipantRequest request,
-            @RequestHeader("Authorization") String authHeader) {
-        String token = resolveToken(authHeader);
-        Long userId = jwtUtil.extractUserId(token);
-        // ✅ Vérifier que la participation appartient bien à l'utilisateur
-        participantService.checkOwnership(id, userId);
-        return ResponseEntity.ok(participantService.updateParticipant(id, request));
+    public EventParticipant update(@PathVariable Long id,
+                                   @RequestBody EventParticipantRequest req,
+                                   @RequestHeader("Authorization") String auth) {
+        participantService.checkOwnership(id, resolveUserId(auth));
+        return participantService.updateParticipant(id, req);
     }
 
-    // ─── DELETE annuler ────────────────────────────────────────────────────────
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DELETE
+    // ═══════════════════════════════════════════════════════════════════════════
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Cancel (delete) a participation")
-    public void deleteParticipant(
-            @PathVariable Long id,
-            @RequestHeader("Authorization") String authHeader) {
-        String token = resolveToken(authHeader);
-        Long userId = jwtUtil.extractUserId(token);
-        // ✅ Vérifier que la participation appartient bien à l'utilisateur
-        participantService.checkOwnership(id, userId);
+    public void delete(@PathVariable Long id,
+                       @RequestHeader("Authorization") String auth) {
+        participantService.checkOwnership(id, resolveUserId(auth));
         participantService.deleteById(id);
     }
-    // ─── Helper ────────────────────────────────────────────────────────────────
-    private String resolveToken(String authHeader) {
-        try {
-            return jwtUtil.resolveBearerToken(authHeader);
-        } catch (JWTVerificationException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or missing token");
-        }
-    }
-    @GetMapping("/my-events/cancelled")
-    public List<EventParticipant> getMyCancelledParticipations(
-            @RequestHeader("Authorization") String authHeader) {
-        String token = resolveToken(authHeader);
-        Long userId = jwtUtil.extractUserId(token);
-        return participantService.findCancelledByUserId(userId);
-    }
-    @PostMapping("/cancel-participation/{id}")
-    public void cancelParticipation(@PathVariable Long id) {
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // CANCEL
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @PostMapping("/cancel/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancel(@PathVariable Long id,
+                       @RequestHeader("Authorization") String auth) {
+        participantService.checkOwnership(id, resolveUserId(auth));
         participantService.cancelParticipation(id);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // REACTIVATE — re-register a cancelled participation
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @PostMapping("/reactivate/{id}")
+    public EventParticipant reactivate(@PathVariable Long id,
+                                       @RequestHeader("Authorization") String auth) {
+        participantService.checkOwnership(id, resolveUserId(auth));
+        return participantService.reactivateParticipation(id);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MY CANCELLED PARTICIPATIONS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/me/cancelled")
+    public List<EventParticipant> myCancelled(@RequestHeader("Authorization") String auth) {
+        return participantService.findCancelledByUserId(resolveUserId(auth));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MY WAITING LIST
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @GetMapping("/me/waiting-list")
+    public List<WaitingListDto> myWaitingList(@RequestHeader("Authorization") String auth) {
+        Long userId = resolveUserId(auth);
+        return participantService.getWaitingListForUser(userId);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // WAITING LIST — Step 1: check availability (legacy, kept for compatibility)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // WAITING LIST — Step 2: join after user consent
+    // ═══════════════════════════════════════════════════════════════════════════
+    @PostMapping("/waiting-list/{eventId}")
+    public ResponseEntity<String> joinWaitingList(
+            @PathVariable Long eventId,
+            @RequestParam boolean accept,
+            @RequestHeader("Authorization") String auth) {
+
+        String result = participantService.joinWaitingList(
+                eventId,
+                resolveUserId(auth),
+                accept
+        );
+
+        return ResponseEntity.ok(result);
+    }
+
+    // ═══════════════════════════════════════
+    // CONFIRM PROMOTION
+    // ═══════════════════════════════════════
+
+    @PostMapping("/confirm/{waitingId}")
+    public ResponseEntity<String> confirmPromotion(
+            @PathVariable Long waitingId) {
+
+        String result = participantService.confirmPromotion(waitingId);
+        return ResponseEntity.ok(result);
+    }
 }

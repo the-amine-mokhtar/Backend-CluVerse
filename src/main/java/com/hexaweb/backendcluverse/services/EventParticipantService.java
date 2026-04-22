@@ -1,13 +1,13 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.EventParticipantRequest;
+import com.hexaweb.backendcluverse.dto.WaitingListDto;
 import com.hexaweb.backendcluverse.entities.User;
-import com.hexaweb.backendcluverse.entities.event.Event;
-import com.hexaweb.backendcluverse.entities.event.EventParticipant;
-import com.hexaweb.backendcluverse.enumerations.ParticipationStatus;
-import com.hexaweb.backendcluverse.repositories.EventParticipantRepository;
-import com.hexaweb.backendcluverse.repositories.EventRepository;
-import com.hexaweb.backendcluverse.repositories.UserRepository;
+import com.hexaweb.backendcluverse.entities.event.*;
+import com.hexaweb.backendcluverse.enumerations.*;
+import com.hexaweb.backendcluverse.repositories.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,212 +20,350 @@ import java.util.Optional;
 @Service
 @Transactional
 public class EventParticipantService extends EntityServiceImpl<EventParticipant, Long> {
-    private final EventService eventService;
+
+    private static final Logger log = LoggerFactory.getLogger(EventParticipantService.class);
+
     private final EventParticipantRepository participantRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventService eventService;
+    private final SmsService smsService;
+    private final EventWaitingListRepository waitingListRepository;
 
-    public EventParticipantService(EventParticipantRepository repository,
-                                   EventRepository eventRepository,
-                                   UserRepository userRepository,
-                                   EventService eventService) {
+    public EventParticipantService(
+            EventParticipantRepository repository,
+            EventRepository eventRepository,
+            UserRepository userRepository,
+            EventService eventService,
+            SmsService smsService,
+            EventWaitingListRepository waitingListRepository
+    ) {
         super(repository);
         this.participantRepository = repository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.eventService = eventService;
+        this.smsService = smsService;
+        this.waitingListRepository = waitingListRepository;
     }
+
+    // =========================================================
+    // FIND METHODS
+    // =========================================================
     public List<EventParticipant> findByUserId(Long userId) {
-        List<EventParticipant> participants = participantRepository.findByUserIdWithEvent(userId);
-
-        // ✅ Normalize any invalid status values in existing data
-        for (EventParticipant p : participants) {
-            if (p.getStatus() != null && "COMPLETED".equals(p.getStatus().name())) {
-                p.setStatus(ParticipationStatus.ATTENDED);
-                participantRepository.save(p); // Save the corrected status
-            }
-        }
-
-        return participants;
+        return participantRepository.findByUserIdWithEvent(userId);
     }
+
     public List<EventParticipant> findByEventId(Long eventId) {
         return participantRepository.findByEventId(eventId);
     }
 
-
-
-    public void checkOwnership(Long participationId, Long userId) {
-        EventParticipant p = participantRepository.findById(participationId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participation not found"));
-        if (!p.getUser().getId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your participation");
-        }
-    }
-
-    public EventParticipant addParticipant(EventParticipantRequest req) {
-        Event event = eventRepository.findById(req.getEventId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
-
-        if (req.getFullName() == null || req.getFullName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Full name is required");
-        }
-        if (req.getEmail() == null || req.getEmail().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is required");
-        }
-        if (req.getPhone() == null || req.getPhone().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phone number is required");
-        }
-
-        User user = userRepository.findById(req.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        applyUserContactUpdates(user, req, false);
-
-        // ── Check if a participation already exists (any status) ──────────────
-        Optional<EventParticipant> existing =
-                participantRepository.findByEventIdAndUserId(req.getEventId(), req.getUserId());
-
-        if (existing.isPresent()) {
-            EventParticipant ep = existing.get();
-
-            if (ep.getStatus() == ParticipationStatus.REGISTERED ||
-                    ep.getStatus() == ParticipationStatus.ATTENDED) {
-                // Already active — block
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Already registered for this event");
-            }
-
-            // Status == CANCELLED → reactivate the existing row
-            ep.setStatus(ParticipationStatus.REGISTERED);
-            ep.setComment(req.getComment());
-            ep.setContactInfo(req.getContactInfo());
-            ep.setReservedSeats(req.getReservedSeats() != null ? req.getReservedSeats() : 1);
-            ep.setWantsReminder(req.getWantsReminder() != null ? req.getWantsReminder() : false);
-            ep.setDietaryRequirements(req.getDietaryRequirements());
-            ep.setEmergencyContact(req.getEmergencyContact());
-            ep.setTeamName(req.getTeamName());
-            EventParticipant saved = participantRepository.save(ep);
-
-// 🔥 Mettre à jour le compteur
-            eventService.updateParticipantsCount(ep.getEvent().getId());
-
-            return saved;        }
-
-        // ── Capacity check (only for brand-new registrations) ─────────────────
-        long activeCount = participantRepository.countByEventIdAndStatusNot(
-                req.getEventId(), ParticipationStatus.CANCELLED);
-        if (event.getCapacity() != null && activeCount >= event.getCapacity()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Event is full");
-        }
-
-        // ── Create new participation ───────────────────────────────────────────
-        EventParticipant participant = EventParticipant.builder()
-                .event(event)
-                .user(user)
-                .comment(req.getComment())
-                .contactInfo(req.getContactInfo())
-                .reservedSeats(req.getReservedSeats() != null ? req.getReservedSeats() : 1)
-                .wantsReminder(req.getWantsReminder() != null ? req.getWantsReminder() : false)
-                .status(ParticipationStatus.REGISTERED)
-                .dietaryRequirements(req.getDietaryRequirements())
-                .emergencyContact(req.getEmergencyContact())
-                .teamName(req.getTeamName())
-                .build();
-
-        EventParticipant saved = participantRepository.save(participant);
-
-// 🔥 Mettre à jour le compteur
-        eventService.updateParticipantsCount(participant.getEvent().getId());
-
-        return saved;    }
-
-    public EventParticipant updateParticipant(Long id, EventParticipantRequest req) {
-        EventParticipant participant = participantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participation not found"));
-
-        if (req.getComment() != null)             participant.setComment(req.getComment());
-        if (req.getContactInfo() != null)         participant.setContactInfo(req.getContactInfo());
-        if (req.getReservedSeats() != null)       participant.setReservedSeats(req.getReservedSeats());
-        if (req.getWantsReminder() != null)       participant.setWantsReminder(req.getWantsReminder());
-        if (req.getStatus() != null) {
-            // ✅ Normalize invalid status values
-            ParticipationStatus normalizedStatus = req.getStatus();
-            if ("COMPLETED".equals(req.getStatus().name())) {
-                normalizedStatus = ParticipationStatus.ATTENDED;
-            }
-            participant.setStatus(normalizedStatus);
-        }
-        if (req.getDietaryRequirements() != null) participant.setDietaryRequirements(req.getDietaryRequirements());
-        if (req.getEmergencyContact() != null)    participant.setEmergencyContact(req.getEmergencyContact());
-        if (req.getTeamName() != null)            participant.setTeamName(req.getTeamName());
-
-        applyUserContactUpdates(participant.getUser(), req);
-
-        return participantRepository.save(participant);
-    }
-
-    public void deleteById(Long id) {
-        EventParticipant participant = participantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participation not found"));
-
-        participantRepository.delete(participant); // supprime réellement
-        eventService.updateParticipantsCount(participant.getEvent().getId());
-    }
     public List<EventParticipant> findCancelledByUserId(Long userId) {
-        return participantRepository.findByUserIdWithEvent(userId).stream()
+        return participantRepository.findByUserIdWithEvent(userId)
+                .stream()
                 .filter(p -> p.getStatus() == ParticipationStatus.CANCELLED)
                 .toList();
     }
-    public void cancelParticipation(Long id) {
-        EventParticipant participant = participantRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participation not found"));
 
-        participant.setStatus(ParticipationStatus.CANCELLED);
-        participant.setDeletedAt(LocalDateTime.now());
-        participantRepository.save(participant);
-
-        eventService.updateParticipantsCount(participant.getEvent().getId());
+    // =========================================================
+    // OWNERSHIP CHECK
+    // =========================================================
+    public void checkOwnership(Long participationId, Long userId) {
+        EventParticipant p = findOrThrow(participationId);
+        if (!p.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You can only modify your own participations");
+        }
     }
 
-    private void applyUserContactUpdates(User user, EventParticipantRequest req) {
-        applyUserContactUpdates(user, req, true);
-    }
+    // =========================================================
+    // MAIN PARTICIPATION FLOW
+    // =========================================================
+    public String participate(Long eventId, Long userId, EventParticipantRequest req) {
 
-    private void applyUserContactUpdates(User user, EventParticipantRequest req, boolean strictEmailUpdate) {
-        boolean updated = false;
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (req.getFullName() != null && !req.getFullName().isBlank()) {
-            String[] parts = req.getFullName().trim().split("\\s+", 2);
-            user.setFirstName(parts[0]);
-            user.setLastName(parts.length > 1 ? parts[1] : "");
-            updated = true;
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        Optional<EventParticipant> existing =
+                participantRepository.findByEventIdAndUserId(eventId, userId);
+
+        if (existing.isPresent() &&
+                existing.get().getStatus() != ParticipationStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Already registered");
         }
 
-        if (req.getEmail() != null && !req.getEmail().isBlank()) {
-            String newEmail = req.getEmail().trim();
-            if (!newEmail.equalsIgnoreCase(user.getEmail())) {
-                Optional<User> existingEmail = userRepository.findByEmail(newEmail);
-                if (existingEmail.isPresent() && !existingEmail.get().getId().equals(user.getId())) {
-                    if (strictEmailUpdate) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
-                    }
-                } else {
-                    user.setEmail(newEmail);
-                    updated = true;
+        long activeCount = participantRepository.countByEventIdAndStatusNot(
+                eventId, ParticipationStatus.CANCELLED);
+
+        boolean hasCapacity = event.getCapacity() == null
+                || event.getCapacity() <= 0
+                || activeCount < event.getCapacity();
+
+        // =========================
+        // REGISTER DIRECT
+        // =========================
+        if (hasCapacity) {
+
+            EventParticipant p = EventParticipant.builder()
+                    .event(event)
+                    .user(user)
+                    .status(ParticipationStatus.REGISTERED)
+                    .reservedSeats(1)
+                    .comment(req.getComment())
+                    .contactInfo(req.getContactInfo())
+                    .wantsReminder(Boolean.TRUE.equals(req.getWantsReminder()))
+                    .build();
+
+            participantRepository.save(p);
+            eventService.updateParticipantsCount(eventId);
+
+            smsService.sendSms(user.getPhone(),
+                    "✅ Inscription confirmée : " + event.getTitle());
+
+            return "REGISTERED";
+        }
+
+        // =========================
+        // WAITING LIST
+        // =========================
+        boolean alreadyWaiting =
+                waitingListRepository.findByEventIdAndUserId(eventId, userId).isPresent();
+
+        if (alreadyWaiting) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Already in waiting list");
+        }
+
+        EventWaitingList wl = EventWaitingList.builder()
+                .event(event)
+                .user(user)
+                .status(WaitingStatus.PENDING)
+                .joinedAt(LocalDateTime.now())
+                .build();
+
+        waitingListRepository.save(wl);
+
+        smsService.sendSms(user.getPhone(),
+                "⏳ Liste d’attente : " + event.getTitle());
+
+        return "WAITING_LIST_ADDED";
+    }
+
+    // =========================================================
+    // ADD PARTICIPANT (LEGACY)
+    // =========================================================
+    public EventParticipant addParticipant(EventParticipantRequest req) {
+
+        Event event = eventRepository.findById(req.getEventId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        User user = userRepository.findById(req.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        EventParticipant participant = EventParticipant.builder()
+                .event(event)
+                .user(user)
+                .status(ParticipationStatus.REGISTERED)
+                .reservedSeats(req.getReservedSeats() != null ? req.getReservedSeats() : 1)
+                .comment(req.getComment())
+                .contactInfo(req.getContactInfo())
+                .wantsReminder(Boolean.TRUE.equals(req.getWantsReminder()))
+                .build();
+
+        EventParticipant saved = participantRepository.save(participant);
+        eventService.updateParticipantsCount(event.getId());
+
+        smsService.sendSms(user.getPhone(),
+                "✅ Registration confirmed: " + event.getTitle());
+
+        return saved;
+    }
+
+    // =========================================================
+    // UPDATE
+    // =========================================================
+    public EventParticipant updateParticipant(Long id, EventParticipantRequest req) {
+        EventParticipant p = findOrThrow(id);
+        applyFields(p, req);
+        if (req.getStatus() != null) p.setStatus(req.getStatus());
+
+        EventParticipant saved = participantRepository.save(p);
+        eventService.updateParticipantsCount(p.getEvent().getId());
+        return saved;
+    }
+
+    // =========================================================
+    // DELETE
+    // =========================================================
+    public void deleteById(Long id) {
+        EventParticipant p = findOrThrow(id);
+        participantRepository.delete(p);
+        eventService.updateParticipantsCount(p.getEvent().getId());
+    }
+
+    // =========================================================
+    // CANCEL + AUTO PROMOTION
+    // =========================================================
+    public void cancelParticipation(Long id) {
+
+        EventParticipant p = findOrThrow(id);
+
+        p.setStatus(ParticipationStatus.CANCELLED);
+        participantRepository.save(p);
+
+        eventService.updateParticipantsCount(p.getEvent().getId());
+
+        promoteFromWaitingList(p.getEvent().getId());
+    }
+
+    // =========================================================
+    // REACTIVATE
+    // =========================================================
+    public EventParticipant reactivateParticipation(Long id) {
+
+        EventParticipant p = findOrThrow(id);
+
+        if (p.getStatus() != ParticipationStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+
+        p.setStatus(ParticipationStatus.REGISTERED);
+        p.setDeletedAt(null);
+
+        EventParticipant saved = participantRepository.save(p);
+        eventService.updateParticipantsCount(p.getEvent().getId());
+
+        return saved;
+    }
+
+    // =========================================================
+    // WAITING LIST JOIN (LEGACY)
+    // =========================================================
+    public String joinWaitingList(Long eventId, Long userId, boolean accept) {
+
+        if (!accept) return "USER_REFUSED";
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        boolean exists = waitingListRepository
+                .findByEventIdAndUserId(eventId, userId)
+                .isPresent();
+
+        if (exists) return "ALREADY_IN_WAITING_LIST";
+
+        EventWaitingList wl = new EventWaitingList();
+        wl.setEvent(event);
+        wl.setUser(user);
+        wl.setStatus(WaitingStatus.PENDING);
+
+        waitingListRepository.save(wl);
+
+        smsService.sendSms(user.getPhone(),
+                "⏳ Added to waiting list: " + event.getTitle());
+
+        return "WAITING_LIST_ADDED";
+    }
+
+    // =========================================================
+    // WAITING CONFIRM (LEGACY SMS LINK)
+    // =========================================================
+    public String confirmPromotion(Long waitingId) {
+
+        EventWaitingList wl = waitingListRepository.findById(waitingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        EventParticipant p = EventParticipant.builder()
+                .event(wl.getEvent())
+                .user(wl.getUser())
+                .status(ParticipationStatus.REGISTERED)
+                .build();
+
+        participantRepository.save(p);
+        waitingListRepository.delete(wl);
+
+        eventService.updateParticipantsCount(p.getEvent().getId());
+
+        smsService.sendSms(wl.getUser().getPhone(),
+                "🎉 Confirmed for event: " + wl.getEvent().getTitle());
+
+        return "CONFIRMED";
+    }
+
+    // =========================================================
+    // AUTO PROMOTION CORE
+    // =========================================================
+    public void promoteFromWaitingList(Long eventId) {
+
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException());
+
+        long activeCount = participantRepository.countByEventIdAndStatusNot(
+                eventId, ParticipationStatus.CANCELLED);
+
+        if (event.getCapacity() != null && activeCount >= event.getCapacity()) return;
+
+        List<EventWaitingList> list =
+                waitingListRepository.findByEventIdOrderByJoinedAtAsc(eventId);
+
+        if (list.isEmpty()) return;
+
+        EventWaitingList first = list.get(0);
+
+        // 🔥 FIX: Keep status as PENDING instead of immediately registering
+        // User must confirm via SMS link before becoming a full participant
+        first.setStatus(WaitingStatus.PENDING);
+        waitingListRepository.save(first);
+
+        // Send confirmation SMS with link
+        String confirmationMessage = "🎉 You've been promoted from the waiting list for " + event.getTitle() 
+                + ". Confirm your spot: [link]";
+        smsService.sendSms(first.getUser().getPhone(), confirmationMessage);
+
+        log.info("[WaitingList] User {} promoted for event {}, awaiting confirmation", 
+                first.getUser().getId(), eventId);
+    }
+
+    // =========================================================
+    // GET WAITING LIST FOR USER
+    // =========================================================
+    public List<WaitingListDto> getWaitingListForUser(Long userId) {
+        List<EventWaitingList> waitingList =
+                waitingListRepository.findByUserIdOrderByJoinedAtDesc(userId);
+
+        return waitingList.stream().map(wl -> {
+            // Get position in queue for this event
+            List<EventWaitingList> queueForEvent =
+                    waitingListRepository.findByEventIdOrderByJoinedAtAsc(wl.getEvent().getId());
+            int position = 0;
+            for (int i = 0; i < queueForEvent.size(); i++) {
+                if (queueForEvent.get(i).getId().equals(wl.getId())) {
+                    position = i + 1;  // 1-based index
+                    break;
                 }
             }
-        }
-
-        if (req.getPhone() != null && !req.getPhone().isBlank()) {
-            String newPhone = req.getPhone().trim();
-            if (!newPhone.equals(user.getPhone())) {
-                user.setPhone(newPhone);
-                updated = true;
-            }
-        }
-
-        if (updated) {
-            userRepository.save(user);
-        }
+            return WaitingListDto.fromEntity(wl, position);
+        }).toList();
     }
 
+    // =========================================================
+    // HELPERS
+    // =========================================================
+    private EventParticipant findOrThrow(Long id) {
+        return participantRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    private void applyFields(EventParticipant p, EventParticipantRequest req) {
+        if (req.getComment() != null) p.setComment(req.getComment());
+        if (req.getContactInfo() != null) p.setContactInfo(req.getContactInfo());
+        if (req.getReservedSeats() != null) p.setReservedSeats(req.getReservedSeats());
+        if (req.getWantsReminder() != null) p.setWantsReminder(req.getWantsReminder());
+    }
 }

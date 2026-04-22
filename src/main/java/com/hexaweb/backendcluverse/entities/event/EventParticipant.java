@@ -7,9 +7,14 @@ import com.hexaweb.backendcluverse.enumerations.ParticipationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
 @Entity
+@Table(indexes = {
+    @Index(name = "idx_event_participant_event_status", columnList = "event_id,status"),
+    @Index(name = "idx_event_participant_user_id", columnList = "user_id"),
+    @Index(name = "idx_event_participant_status", columnList = "status")
+})
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor
 @Builder
@@ -25,6 +30,7 @@ public class EventParticipant {
     private String contactInfo;
     private Integer reservedSeats;
     private Boolean wantsReminder = false;
+    private Boolean reminderSent = false;
 
     private String dietaryRequirements;
     private String emergencyContact;
@@ -58,14 +64,6 @@ public class EventParticipant {
     public String getUserPhone() {
         return this.user == null ? null : this.user.getPhone();
     }
-
-    // ✅ Paiement
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
-
-    private String paymentMethod;
-    private BigDecimal totalAmount;
-    private LocalDateTime paymentDate;
 
     @PrePersist
     public void prePersist() {
