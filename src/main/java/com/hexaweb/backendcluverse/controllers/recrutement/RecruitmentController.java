@@ -1,12 +1,13 @@
-package com.hexaweb.backendcluverse.controllers;
+package com.hexaweb.backendcluverse.controllers.recrutement;
 
 import com.hexaweb.backendcluverse.dto.AnswerDto;
 import com.hexaweb.backendcluverse.dto.ApplicationSubmissionDto;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Notification;
-import com.hexaweb.backendcluverse.entities.recruitement.*;
+import com.hexaweb.backendcluverse.entities.recrutement.*;
 import com.hexaweb.backendcluverse.repositories.*;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
+import com.hexaweb.backendcluverse.services.QuestionGeneratorService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.ChronoLocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +36,7 @@ public class RecruitmentController {
     private final ApplicationRepository applicationRepository;
     private final ApplicationAnswerRepository answerRepository;
     private final ClubRepository clubRepository;
+    private final QuestionGeneratorService questionGeneratorService;
     @Autowired
     private JavaMailSender mailSender;
 
@@ -333,5 +333,30 @@ public class RecruitmentController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .header(HttpHeaders.CONTENT_TYPE, "text/csv; charset=UTF-8")
                 .body(bytes);
+    }
+
+    @PostMapping("/campaigns/{id}/generate-questions")
+    public ResponseEntity<List<Map<String, Object>>> generateQuestions(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            @RequestHeader("Authorization") String authHeader) {
+
+        RecruitmentCampaign campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
+
+        String clubName = campaign.getClub().getName();
+        String clubDescription = campaign.getClub().getDescription();
+        String campaignTitle = campaign.getTitle();
+        int questionCount = body.get("questionCount") != null ?
+                Integer.parseInt(body.get("questionCount").toString()) : 5;
+        List<String> themes = body.get("themes") != null ?
+                (List<String>) body.get("themes") : List.of("motivation", "disponibilité");
+        String additionalInstructions = (String) body.getOrDefault("additionalInstructions", "");
+
+        List<Map<String, Object>> questions = questionGeneratorService.generateQuestions(
+                clubName, clubDescription, campaignTitle, questionCount, themes, additionalInstructions
+        );
+
+        return ResponseEntity.ok(questions);
     }
 }

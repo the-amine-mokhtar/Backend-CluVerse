@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.entities.recruitement;
+package com.hexaweb.backendcluverse.entities.recrutement;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

@@ -7,7 +7,7 @@ import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.entities.finance.Budget;
 import com.hexaweb.backendcluverse.entities.finance.Transaction;
 import com.hexaweb.backendcluverse.entities.logistics.Resource;
-import com.hexaweb.backendcluverse.entities.recruitement.RecruitmentCampaign;
+import com.hexaweb.backendcluverse.entities.recrutement.RecruitmentCampaign;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;

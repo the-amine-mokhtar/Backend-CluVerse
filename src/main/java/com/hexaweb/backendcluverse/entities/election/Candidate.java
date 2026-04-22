@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.enumerations.CandidateStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -31,6 +32,7 @@ public class Candidate {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "LONGTEXT")
     private String program;
 
     @Enumerated(EnumType.STRING)
@@ -38,7 +40,11 @@ public class Candidate {
 
     private LocalDateTime submissionDate;
     private LocalDateTime withdrawalDate;
+
+    @Column(columnDefinition = "TEXT")
     private String aiCritique;
+
+    @Column(columnDefinition = "LONGTEXT")
     private String bio;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

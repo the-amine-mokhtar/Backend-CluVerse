@@ -1,9 +1,13 @@
 package com.hexaweb.backendcluverse.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.election.Candidate;
 import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
+import com.hexaweb.backendcluverse.entities.event.Reservation;
+import com.hexaweb.backendcluverse.entities.logistics.Transport;
+import com.hexaweb.backendcluverse.entities.skills.UserSkill;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -24,6 +28,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

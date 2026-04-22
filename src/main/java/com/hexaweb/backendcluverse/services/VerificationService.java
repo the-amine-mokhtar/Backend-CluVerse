@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @Slf4j
