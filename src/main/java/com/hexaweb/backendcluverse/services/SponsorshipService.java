@@ -1,15 +1,19 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.CreateSponsorshipRequest;
+import com.hexaweb.backendcluverse.dto.CompleteSponsorPaymentRequest;
+import com.hexaweb.backendcluverse.dto.SponsorPaymentPageContextDto;
 import com.hexaweb.backendcluverse.dto.SponsorshipDto;
 import com.hexaweb.backendcluverse.dto.UpdateSponsorshipRequest;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.event.Event;
+import com.hexaweb.backendcluverse.entities.finance.Transaction;
 import com.hexaweb.backendcluverse.entities.sponsoring.SponsorEmail;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
 import com.hexaweb.backendcluverse.enumerations.SponsorEmailDirection;
 import com.hexaweb.backendcluverse.enumerations.SponsorshipStatus;
+import com.hexaweb.backendcluverse.enumerations.TransactionType;
 import com.hexaweb.backendcluverse.repositories.EventRepository;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.SponsorEmailRepository;
@@ -36,6 +40,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -57,6 +62,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
     private final SponsorService sponsorService;
     private final ClubRepository clubRepository;
     private final JavaMailSender mailSender;
+    private final TransactionService transactionService;
     private final AtomicBoolean replySyncRunning = new AtomicBoolean(false);
     private volatile long lastReplySyncStartedAt = 0L;
 
@@ -78,8 +84,9 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
             EventRepository eventRepository,
             SponsorEmailRepository sponsorEmailRepository,
             SponsorService sponsorService,
-                ClubRepository clubRepository,
-            JavaMailSender mailSender
+            ClubRepository clubRepository,
+            JavaMailSender mailSender,
+            TransactionService transactionService
     ) {
         super(repository);
         this.sponsorshipRepository = repository;
@@ -89,6 +96,7 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
         this.sponsorService = sponsorService;
         this.clubRepository = clubRepository;
         this.mailSender = mailSender;
+        this.transactionService = transactionService;
     }
 
     public List<SponsorshipDto> getAll(Long clubId) {
@@ -488,9 +496,72 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
         sponsorship.setSignedAt(LocalDateTime.now());
         sponsorship.setStatus(SponsorshipStatus.SIGNED);
         sponsorship.setSignedUploadToken(null);
-        sponsorshipRepository.save(sponsorship);
+        sponsorship = sponsorshipRepository.save(sponsorship);
+        sendSponsorPaymentLinkEmail(sponsorship);
 
         return appBaseUrl + "/sponsor-response?result=signed-uploaded";
+    }
+
+    public SponsorPaymentPageContextDto getPaymentPageContextByToken(String token) {
+        if (!hasText(token)) {
+            throw new RuntimeException("Missing payment token");
+        }
+
+        Sponsorship sponsorship = sponsorshipRepository.findByPaymentPageToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired payment token"));
+
+        SponsorshipStatus status = normalizeStatus(sponsorship.getStatus());
+        if (status != SponsorshipStatus.SIGNED && status != SponsorshipStatus.PAID) {
+            throw new RuntimeException("Payment page is only available after signing");
+        }
+
+        Sponsor sponsor = sponsorship.getSponsor();
+        return new SponsorPaymentPageContextDto(
+                sponsorship.getId(),
+                sponsor != null ? sponsor.getName() : "",
+                sponsor != null ? sponsor.getContactEmail() : "",
+                firstNonBlank(sponsorship.getEventName(), "Sponsorship Event"),
+                nonNull(firstNonBlankAmount(sponsorship.getAgreedAmount(), sponsorship.getExpectedAmount())),
+                nonNull(sponsorship.getPaidAmount()),
+                "EUR"
+        );
+    }
+
+    @Transactional
+    public void completePaymentByToken(String token, CompleteSponsorPaymentRequest request) {
+        if (!hasText(token)) {
+            throw new RuntimeException("Missing payment token");
+        }
+
+        Sponsorship sponsorship = sponsorshipRepository.findByPaymentPageToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired payment token"));
+
+        SponsorshipStatus status = normalizeStatus(sponsorship.getStatus());
+        if (status == SponsorshipStatus.PAID) {
+            return;
+        }
+        if (status != SponsorshipStatus.SIGNED) {
+            throw new RuntimeException("Sponsorship is not ready for payment");
+        }
+
+        BigDecimal amountTnd = nonNegativeOrZero(request != null ? request.getAmountTnd() : null, "Amount");
+        if (amountTnd.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Payment amount must be greater than zero");
+        }
+
+        Transaction transaction = new Transaction();
+        transaction.setType(TransactionType.INCOME);
+        transaction.setDate(LocalDate.now());
+        transaction.setAmount(amountTnd.doubleValue());
+        transaction.setClub(sponsorship.getClub());
+        transaction.setSponsor(sponsorship.getSponsor());
+        transaction.setSponsorship(sponsorship);
+
+        String reference = request != null ? trimToNull(request.getReference()) : null;
+        String paymentIntentId = request != null ? trimToNull(request.getPaymentIntentId()) : null;
+        transaction.setDescription(buildSponsorshipPaymentDescription(sponsorship, reference, paymentIntentId));
+
+        transactionService.save(transaction);
     }
 
     public String signedUploadFailureRedirect() {
@@ -615,6 +686,66 @@ public class SponsorshipService extends EntityServiceImpl<Sponsorship, Long> {
             null,
             null
         );
+    }
+
+    private void sendSponsorPaymentLinkEmail(Sponsorship sponsorship) {
+        Sponsor sponsor = sponsorship.getSponsor();
+        if (sponsor == null || !hasText(sponsor.getContactEmail())) {
+            return;
+        }
+
+        Sponsorship saved = ensurePaymentPageToken(sponsorship);
+        String eventName = firstNonBlank(saved.getEventName(), "the event");
+        String paymentLink = appBaseUrl + "/sponsor-payment?token=" + saved.getPaymentPageToken();
+        String subject = withSponsorshipMarker(saved, "Sponsorship Payment - " + eventName);
+        String body = "We have received your signed sponsorship contract for " + eventName + ".\nPlease complete your sponsorship payment using the secure link below.";
+
+        sendHtmlEmailWithOptionalAttachment(
+                saved.getId(),
+                sponsor.getContactEmail(),
+                sponsor.getName(),
+                subject,
+                body,
+                null,
+                null,
+                "Open Secure Payment Page",
+                paymentLink,
+                null,
+                null
+        );
+    }
+
+    private Sponsorship ensurePaymentPageToken(Sponsorship sponsorship) {
+        if (hasText(sponsorship.getPaymentPageToken())) {
+            return sponsorship;
+        }
+        sponsorship.setPaymentPageToken(UUID.randomUUID().toString());
+        return sponsorshipRepository.save(sponsorship);
+    }
+
+    private BigDecimal firstNonBlankAmount(BigDecimal first, BigDecimal second) {
+        if (first != null) {
+            return first;
+        }
+        return second;
+    }
+
+    private String buildSponsorshipPaymentDescription(Sponsorship sponsorship, String reference, String paymentIntentId) {
+        StringBuilder description = new StringBuilder("Sponsor payment");
+        if (sponsorship.getId() != null) {
+            description.append(" #").append(sponsorship.getId());
+        }
+        String eventName = trimToNull(sponsorship.getEventName());
+        if (eventName != null) {
+            description.append(" - ").append(eventName);
+        }
+        if (hasText(reference)) {
+            description.append(" - Ref: ").append(reference);
+        }
+        if (hasText(paymentIntentId)) {
+            description.append(" - PI: ").append(paymentIntentId);
+        }
+        return description.toString();
     }
 
     private void saveContractPdfToDisk(String fileName, byte[] pdf) {

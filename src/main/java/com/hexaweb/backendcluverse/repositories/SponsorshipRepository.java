@@ -18,6 +18,8 @@ public interface SponsorshipRepository extends JpaRepository<Sponsorship, Long> 
 
 	Optional<Sponsorship> findBySignedUploadToken(String signedUploadToken);
 
+	Optional<Sponsorship> findByPaymentPageToken(String paymentPageToken);
+
 	List<Sponsorship> findByStatusOrderByUpdatedAtDescIdDesc(SponsorshipStatus status);
 
 	List<Sponsorship> findByClubIdAndStatusOrderByUpdatedAtDescIdDesc(Long clubId, SponsorshipStatus status);

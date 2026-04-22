@@ -1,8 +1,10 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.hexaweb.backendcluverse.dto.CompleteSponsorPaymentRequest;
 import com.hexaweb.backendcluverse.dto.CreateSponsorshipRequest;
 import com.hexaweb.backendcluverse.dto.MoveSponsorshipRequest;
+import com.hexaweb.backendcluverse.dto.SponsorPaymentPageContextDto;
 import com.hexaweb.backendcluverse.dto.SponsorshipDto;
 import com.hexaweb.backendcluverse.dto.UpdateSponsorshipRequest;
 import com.hexaweb.backendcluverse.services.SponsorshipService;
@@ -128,6 +130,26 @@ public class SponsorshipController {
             redirectView.setUrl(sponsorshipService.signedUploadFailureRedirect());
         }
         return redirectView;
+    }
+
+    @GetMapping("/respond/payment-context")
+    public ResponseEntity<SponsorPaymentPageContextDto> paymentContext(@RequestParam("token") String token) {
+        try {
+            return ResponseEntity.ok(sponsorshipService.getPaymentPageContextByToken(token));
+        } catch (RuntimeException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @PostMapping("/respond/payment")
+    public ResponseEntity<Void> completePayment(@RequestParam("token") String token,
+                                                @RequestBody CompleteSponsorPaymentRequest request) {
+        try {
+            sponsorshipService.completePaymentByToken(token, request);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
     }
 
     private Long resolveClubId(String authHeader) {

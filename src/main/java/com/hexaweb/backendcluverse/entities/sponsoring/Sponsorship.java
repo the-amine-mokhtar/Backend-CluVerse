@@ -58,6 +58,7 @@ public class Sponsorship {
     private String outreachDecision;
     private LocalDateTime outreachRespondedAt;
     private String signedUploadToken;
+    private String paymentPageToken;
     private LocalDateTime proposalSentAt;
     private LocalDateTime contractSentAt;
     private LocalDateTime signedAt;
