@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,7 +27,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Position {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,16 +35,21 @@ public class Position {
 
     private String name;
     private String description;
-    private int termLength;
-    private int maxCandidates;
-    private boolean isElectable;
-
-
-    private boolean isAutoRenew;
+    @jakarta.persistence.Column(nullable = true)
+    private Integer termLength;
+    @jakarta.persistence.Column(nullable = true)
+    private Integer maxCandidates;
+    @jakarta.persistence.Column(nullable = true)
+    private Boolean isElectable;
+    @jakarta.persistence.Column(nullable = true)
+    private Boolean isAutoRenew;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "current_holder_id", nullable = true)
     private User currentHolder;
+    
+    @jakarta.persistence.Column(nullable = true)
+    private LocalDate heldSince;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
@@ -62,4 +68,3 @@ public class Position {
     @JsonIgnore
     private List<Vote> votes = new ArrayList<>();
 }
-

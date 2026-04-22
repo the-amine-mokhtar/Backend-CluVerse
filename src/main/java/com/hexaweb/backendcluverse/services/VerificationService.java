@@ -10,7 +10,6 @@ import com.hexaweb.backendcluverse.repositories.UserRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -18,14 +17,10 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @Service
 
 public class VerificationService {
-
-    private static final Logger LOGGER = Logger.getLogger(VerificationService.class.getName());
 
     @Autowired
     private ClubRepository clubRepository;
@@ -67,7 +62,6 @@ public class VerificationService {
         club.setTemporaryPassword(temporaryPassword);
         club.setActivationExpiresAt(LocalDateTime.now().plusHours(24));
         clubRepository.save(club);
-
         SimpleMailMessage mail = new SimpleMailMessage();
         mail.setFrom(fromAddress);
         mail.setTo(club.getEmail());
@@ -81,15 +75,7 @@ public class VerificationService {
                         baseUrl + "/verify?code=" + activationCode + "\n\n" +
                         "Ce lien expire dans 24h."
         );
-
-        try {
-            mailSender.send(mail);
-        } catch (MailException ex) {
-            LOGGER.log(Level.WARNING,
-                    "Impossible d'envoyer l'e-mail d'activation au club " + club.getEmail()
-                            + ". Le club a bien été créé, mais l'e-mail n'a pas pu être envoyé.",
-                    ex);
-        }
+        mailSender.send(mail);
     }
 
 
@@ -125,14 +111,6 @@ public class VerificationService {
                         "Password : " + tempPassword + "\n\n" +
                         "Login at : " + baseUrl + "/auth/login\n\n"
         );
-
-        try {
-            mailSender.send(mail);
-        } catch (MailException ex) {
-            LOGGER.log(Level.WARNING,
-                    "Impossible d'envoyer l'invitation e-mail à " + email
-                            + ". Le membre a bien été créé, mais l'e-mail n'a pas pu être envoyé.",
-                    ex);
-        }
+        mailSender.send(mail);
     }
 }

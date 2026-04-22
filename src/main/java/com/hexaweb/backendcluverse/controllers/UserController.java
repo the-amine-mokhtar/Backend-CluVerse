@@ -1,11 +1,15 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.dto.UpdateProfileRequest;
+import com.hexaweb.backendcluverse.dto.GoogleCalendarConnectRequest;
+import com.hexaweb.backendcluverse.dto.GoogleCalendarConnectionResponse;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.services.CloudinaryService;
 import com.hexaweb.backendcluverse.services.UserService;
+import com.hexaweb.backendcluverse.services.competencies.GoogleCalendarService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +36,9 @@ public class UserController {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private GoogleCalendarService googleCalendarService;
 
 
     @GetMapping
@@ -111,5 +118,53 @@ public class UserController {
 
         return ResponseEntity.ok(photoUrl);
     }
+
+        @GetMapping("/me/google-calendar")
+        public ResponseEntity<GoogleCalendarConnectionResponse> googleCalendarStatus(@RequestHeader("Authorization") String authHeader) {
+        String token = jwtUtil.resolveBearerToken(authHeader);
+        Long userId = jwtUtil.extractUserId(token);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        boolean connected = user.getGoogleCalendarRefreshToken() != null && !user.getGoogleCalendarRefreshToken().isBlank();
+        return ResponseEntity.ok(GoogleCalendarConnectionResponse.builder()
+            .connected(connected)
+            .message(connected ? "Google Calendar connected" : "Google Calendar not connected")
+            .build());
+        }
+
+        @PostMapping("/me/google-calendar/connect")
+        public ResponseEntity<GoogleCalendarConnectionResponse> connectGoogleCalendar(@RequestHeader("Authorization") String authHeader,
+                                               @Valid @RequestBody GoogleCalendarConnectRequest request) {
+        String token = jwtUtil.resolveBearerToken(authHeader);
+        Long userId = jwtUtil.extractUserId(token);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        googleCalendarService.validateRefreshToken(request.getRefreshToken());
+        user.setGoogleCalendarRefreshToken(request.getRefreshToken().trim());
+        userRepository.save(user);
+
+        return ResponseEntity.ok(GoogleCalendarConnectionResponse.builder()
+            .connected(true)
+            .message("Google Calendar connected successfully")
+            .build());
+        }
+
+        @DeleteMapping("/me/google-calendar/disconnect")
+        public ResponseEntity<GoogleCalendarConnectionResponse> disconnectGoogleCalendar(@RequestHeader("Authorization") String authHeader) {
+        String token = jwtUtil.resolveBearerToken(authHeader);
+        Long userId = jwtUtil.extractUserId(token);
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        user.setGoogleCalendarRefreshToken(null);
+        userRepository.save(user);
+
+        return ResponseEntity.ok(GoogleCalendarConnectionResponse.builder()
+            .connected(false)
+            .message("Google Calendar disconnected")
+            .build());
+        }
 }
 
