@@ -1,6 +1,5 @@
 package com.hexaweb.backendcluverse.entities.recrutement;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -15,7 +14,6 @@ public class InterviewConfig {
     private Long id;
 
     @ManyToOne
-    @JsonIgnoreProperties({"interviewConfigs"})
     @JoinColumn(name = "application_id")
     private Application application;
 

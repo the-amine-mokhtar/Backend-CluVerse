@@ -69,33 +69,4 @@ public class GroqService {
         }
         return cleaned;
     }
-
-    public Map<String, Object> chatRaw(List<Map<String, String>> messages, double temperature) {
-        WebClient client = webClientBuilder.build();
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("model", MODEL);
-        body.put("messages", messages);
-        body.put("temperature", temperature);
-        body.put("stream", false);
-
-        String response = client.post()
-                .uri(GROQ_URL)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(body)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
-
-        try {
-            Map<String, Object> parsed = objectMapper.readValue(response, Map.class);
-            List<Map<String, Object>> choices = (List<Map<String, Object>>) parsed.get("choices");
-            Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
-            String content = (String) message.get("content");
-            return Map.of("content", content);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse Groq response: " + e.getMessage());
-        }
-    }
 }

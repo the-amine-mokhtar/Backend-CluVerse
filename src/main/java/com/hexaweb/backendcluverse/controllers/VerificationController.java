@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/clubs")
@@ -60,10 +60,7 @@ public class VerificationController {
         club.setTemporaryPassword(null);
         clubRepository.save(club);
 
-        HashMap<String, Object> payload = new HashMap<>();
-        payload.put("message", "Compte activé");
-        payload.put("email", president.getEmail());
-        return ResponseEntity.ok(payload);
+        return ResponseEntity.ok(Map.of("message", "Compte activé", "email", president.getEmail()));
     }
 
 
