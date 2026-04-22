@@ -281,7 +281,7 @@ public class MemberCompetencyService {
         Map<Long, String> requiredSkillNames = competencyRepository.findAllById(requiredSkillIds).stream()
             .collect(Collectors.toMap(
                 competency -> competency.getId(),
-                competency -> competency.getName(),
+                    Competency::getName,
                 (left, right) -> left,
                 HashMap::new
             ));
