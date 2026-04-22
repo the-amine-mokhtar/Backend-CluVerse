@@ -1,18 +1,24 @@
 package com.hexaweb.backendcluverse.services;
 
 import com.hexaweb.backendcluverse.dto.TransportPredictionResponse;
+import com.hexaweb.backendcluverse.entities.event.Location;
+import com.hexaweb.backendcluverse.repositories.LocationRepository;
 import com.hexaweb.backendcluverse.utils.TunisianCities;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 public class TransportPredictionService {
 
     @Autowired
     private LinearRegressionModel model;
+
+    @Autowired
+    private LocationRepository locationRepository;
 
     public TransportPredictionResponse predictTransport(
             Long departureLocationId,
@@ -182,22 +188,25 @@ public class TransportPredictionService {
             scheduledDate, null, null);
     }
 
-    private int getEstimatedDistance(Long depId, Long arrId) {
-        // Returns estimated km between location pairs
+    private double getEstimatedDistance(Long depId, Long arrId) {
+        // Returns estimated km between location pairs (FALLBACK ONLY)
         // Based on typical Tunisian city distances
-        if (depId == null || arrId == null) return 50;
-        if (depId.equals(arrId)) return 5; // same location = very short
+        
+        if (depId == null || arrId == null) return 50.0;
+        if (depId.equals(arrId)) return 5.0; // same location = very short
         
         long min = Math.min(depId, arrId);
         long max = Math.max(depId, arrId);
         long diff = max - min;
         
-        // Use ID difference as a proxy for distance
-        if (diff <= 1) return 20;    // close locations
-        if (diff <= 3) return 60;    // medium distance
-        if (diff <= 5) return 100;   // far
-        if (diff <= 10) return 150;  // very far
-        return 200;                  // extremely far
+        // Improved heuristic for Tunisian geography
+        // Tunisia is roughly 900km north-south, 350km east-west
+        if (diff <= 1) return 25.0;      // adjacent locations
+        if (diff <= 2) return 40.0;      // very close
+        if (diff <= 3) return 70.0;      // medium distance (e.g., Béja-Jendouba ~100km real)
+        if (diff <= 5) return 120.0;     // far within Tunisia
+        if (diff <= 8) return 200.0;     // very far
+        return 300.0;                    // extremely far (cross-country)
     }
 
     private String buildRecommendation(
@@ -235,6 +244,80 @@ public class TransportPredictionService {
     private String buildRecommendation(
             String riskLevel, int hour, double duration) {
         return buildRecommendation(riskLevel, hour, duration, 0);
+    }
+
+    /**
+     * Calculate the distance between two locations based on their IDs
+     * Uses TunisianCities if location IDs correspond to known cities
+     */
+    public Double calculateDistanceBetweenLocations(Long departureLocationId, Long arrivalLocationId) {
+        if (departureLocationId == null || arrivalLocationId == null) {
+            return 0.0;
+        }
+
+        try {
+            // Load locations from database
+            Optional<Location> depLocation = locationRepository.findById(departureLocationId);
+            Optional<Location> arrLocation = locationRepository.findById(arrivalLocationId);
+
+            if (depLocation.isPresent() && arrLocation.isPresent()) {
+                Location dep = depLocation.get();
+                Location arr = arrLocation.get();
+
+                // Try to use TunisianCities for accurate distance
+                double[] depCoords = TunisianCities.findCoordinates(dep.getName());
+                double[] arrCoords = TunisianCities.findCoordinates(arr.getName());
+
+                System.out.println("🗺️  Location Distance Calculation:");
+                System.out.println("  Departure: " + dep.getName() + " [ID: " + departureLocationId + "]");
+                System.out.println("  Arrival: " + arr.getName() + " [ID: " + arrivalLocationId + "]");
+
+                if (depCoords != null && arrCoords != null) {
+                    // Found both locations in TunisianCities database
+                    double straightKm = TunisianCities.distanceKm(
+                        depCoords[0], depCoords[1],
+                        arrCoords[0], arrCoords[1]);
+                    double roadKm = TunisianCities.roadDistanceKm(straightKm);
+
+                    System.out.println("  ✅ Found in database: Straight " + String.format("%.1f", straightKm) + "km → Road " + String.format("%.1f", roadKm) + "km");
+                    return roadKm;
+                } else if (depCoords != null || arrCoords != null) {
+                    // Partial match - at least one city found
+                    System.out.println("  ⚠️  Partial match in database");
+                    if (depCoords == null) System.out.println("    Departure " + dep.getName() + " not found");
+                    if (arrCoords == null) System.out.println("    Arrival " + arr.getName() + " not found");
+                }
+
+                // Fallback: Try to use Location coordinates if available
+                if (dep.getLatitude() != null && dep.getLongitude() != null &&
+                    arr.getLatitude() != null && arr.getLongitude() != null) {
+                    try {
+                        double depLat = Double.parseDouble(dep.getLatitude());
+                        double depLon = Double.parseDouble(dep.getLongitude());
+                        double arrLat = Double.parseDouble(arr.getLatitude());
+                        double arrLon = Double.parseDouble(arr.getLongitude());
+
+                        double straightKm = TunisianCities.distanceKm(depLat, depLon, arrLat, arrLon);
+                        double roadKm = TunisianCities.roadDistanceKm(straightKm);
+
+                        System.out.println("  ✅ Using Location coordinates: Straight " + String.format("%.1f", straightKm) + "km → Road " + String.format("%.1f", roadKm) + "km");
+                        return roadKm;
+                    } catch (NumberFormatException e) {
+                        System.out.println("  ⚠️  Location coordinates invalid for parsing");
+                    }
+                }
+
+                System.out.println("  ⏮️  Fallback to ID-based heuristic");
+            }
+
+            // Fallback: Use ID-based heuristic
+            return (double) getEstimatedDistance(departureLocationId, arrivalLocationId);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error calculating distance: " + e.getMessage());
+            e.printStackTrace();
+            return 50.0;  // Default fallback distance
+        }
     }
 }
 

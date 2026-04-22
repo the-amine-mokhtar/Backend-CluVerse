@@ -1,0 +1,51 @@
+{
+  "bias": 55.845223842113384,
+  "weights": [
+    7.556994243093584,
+    4.399324222126966,
+    -4.809831737301906,
+    -7.304300228757823,
+    -2.4761223142854405,
+    -4.943892572277115,
+    -3.7090313798558636,
+    6.698130086104962
+  ],
+  "feature_means": [
+    0.4976434166666662,
+    0.4982619863013698,
+    0.5217375000000005,
+    0.6455687500000014,
+    0.5954593750000017,
+    0.5904093750000005,
+    0.5474125000000031,
+    0.43765956032075015
+  ],
+  "feature_stds": [
+    0.2829736163683402,
+    0.28628850113537957,
+    0.2728360066971919,
+    0.20255059386348226,
+    0.22999724144987893,
+    0.23052492982887504,
+    0.2610797245389692,
+    0.20203796750778416
+  ],
+  "features": [
+    "km_since_service_norm",
+    "days_since_service_norm",
+    "fuel_level_norm",
+    "engine_condition_norm",
+    "tire_condition_norm",
+    "brake_condition_norm",
+    "oil_level_norm",
+    "usage_pressure_norm"
+  ],
+  "normalization": {
+    "km_since_service_max": 15000,
+    "days_since_service_max": 365
+  },
+  "training_samples": 3200,
+  "model_type": "LINEAR_REGRESSION",
+  "purpose": "Vehicle breakdown risk prediction",
+  "generated_by": "Backend-Cluverse ml/train_maintenance_model.py"
+}

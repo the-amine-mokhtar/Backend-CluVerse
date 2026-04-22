@@ -20,6 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/resources")
@@ -28,6 +31,22 @@ public class ResourceController {
 
     private final ResourceService resourceService;
     private final CloudinaryService cloudinaryService;
+
+    // DEBUG ENDPOINT - Liste tous les codes-barres (à supprimer en production)
+    @GetMapping("/debug/barcodes")
+    public ResponseEntity<Map<String, Object>> debugBarcodes() {
+        var barcodes = resourceService.getAllBarcodes();
+        var response = new HashMap<String, Object>();
+        response.put("total", barcodes.size());
+        response.put("barcodes", barcodes);
+        return ResponseEntity.ok(response);
+    }
+
+    // BARCODE SEARCH - Doit être avant /{id} pour éviter les collisions de routes
+    @GetMapping("/barcode/{barcode}")
+    public Resource getByBarcode(@PathVariable String barcode) {
+        return resourceService.findByBarcode(barcode);
+    }
 
     @GetMapping
     public List<Resource> getAll() {

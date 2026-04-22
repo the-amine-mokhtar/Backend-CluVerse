@@ -4,6 +4,7 @@ import com.hexaweb.backendcluverse.dto.TransportPredictionResponse;
 import com.hexaweb.backendcluverse.dto.TransportRequest;
 import com.hexaweb.backendcluverse.dto.TransportResponse;
 import com.hexaweb.backendcluverse.entities.logistics.Transport;
+import com.hexaweb.backendcluverse.entities.logistics.Vehicle;
 import com.hexaweb.backendcluverse.services.TransportPredictionService;
 import com.hexaweb.backendcluverse.services.TransportService;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class TransportController {
                 transport.getScheduledDate(),
                 transport.getDepartureLocationId(),
                 transport.getArrivalLocationId(),
+                transport.getDistance(),
                 transport.getStatus(),
                 vehicleId,
                 userId,
@@ -61,6 +63,19 @@ public class TransportController {
         return transportService.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @GetMapping("/distance-between")
+    public Map<String, Object> getDistanceBetween(
+            @RequestParam Long departureLocationId,
+            @RequestParam Long arrivalLocationId) {
+        Double distance = transportPredictionService.calculateDistanceBetweenLocations(
+                departureLocationId, arrivalLocationId);
+        return Map.of(
+                "departureLocationId", departureLocationId,
+                "arrivalLocationId", arrivalLocationId,
+                "distanceKm", distance != null ? distance : 0.0
+        );
     }
 
     @GetMapping(value = "/prediction", 
@@ -108,4 +123,29 @@ public class TransportController {
                 "message", "Statuts transportés mis à jour avec succès"
         );
     }
+
+    @GetMapping("/{id}/fuel-alert")
+    public Map<String, Object> getFuelAlert(@PathVariable Long id) {
+        Transport transport = transportService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        
+        Vehicle vehicle = transport.getVehicle();
+        Double fuelLevel = vehicle.getFuelLevel() != null ? vehicle.getFuelLevel() : 100.0;
+        
+        boolean needsFuel = fuelLevel < 25;
+        String status = fuelLevel > 75 ? "GREEN" : (fuelLevel > 50 ? "YELLOW" : (fuelLevel > 25 ? "ORANGE" : "RED"));
+        String message = needsFuel ? "🚨 RAVITAILLEMENT RECOMMANDÉ!" : "✅ Niveau de carburant acceptable";
+        
+        return Map.of(
+                "transportId", id,
+                "vehicleId", vehicle.getId(),
+                "vehicleModel", vehicle.getModel(),
+                "fuelLevel", Math.round(fuelLevel * 10.0) / 10.0,
+                "fuelConsumed", transport.getFuelConsumed() != null ? Math.round(transport.getFuelConsumed() * 10.0) / 10.0 : 0.0,
+                "needsFuel", needsFuel,
+                "status", status,
+                "message", message
+        );
+    }
 }
+

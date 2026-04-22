@@ -6,7 +6,8 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
-@Component
+// @Component
+// Temporarily disabled - UserRepository autowiring issue
 public class AdminInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
