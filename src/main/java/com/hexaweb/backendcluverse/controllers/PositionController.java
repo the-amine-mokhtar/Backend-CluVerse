@@ -11,7 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
+import com.hexaweb.backendcluverse.dto.PositionDTO;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/positions")
@@ -23,28 +27,30 @@ public class PositionController {
     private final JwtUtil jwtUtil;
 
     @GetMapping
-    public List<Position> getByClubId(
+    public List<PositionDTO> getByClubId(
             @RequestParam(required = false) Long clubId,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return clubId != null ? positionService.findByClubId(clubId) : positionService.findAll();
+        List<Position> positions = clubId != null ? positionService.findByClubId(clubId) : positionService.findAll();
+        return positions.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
-    public Position getById(
+    @GetMapping("/{id:[0-9]+}")
+    public PositionDTO getById(
             @PathVariable Long id,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return positionService.findById(id)
+        Position position = positionService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return mapToDTO(position);
     }
 
     @PostMapping
-    public Position create(
+    public PositionDTO create(
             @RequestBody PositionRequest request,
             @RequestHeader("Authorization") String authHeader) {
         resolveToken(authHeader);
-        return positionService.createPosition(request);
+        return mapToDTO(positionService.createPosition(request));
     }
 
     @DeleteMapping("/{id}")
@@ -55,11 +61,47 @@ public class PositionController {
         positionService.deleteById(id);
     }
 
+    @PutMapping("/{id}")
+    public PositionDTO update(
+            @PathVariable Long id,
+            @RequestBody PositionRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        return mapToDTO(positionService.updatePosition(id, request));
+    }
+
+    @PatchMapping("/{id}/held-since")
+    public PositionDTO updateHeldSince(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> payload,
+            @RequestHeader("Authorization") String authHeader) {
+        resolveToken(authHeader);
+        String dateStr = payload.get("heldSince");
+        LocalDate heldSince = (dateStr != null && !dateStr.isEmpty()) ? LocalDate.parse(dateStr) : null;
+        return mapToDTO(positionService.updateHeldSince(id, heldSince));
+    }
+
     private String resolveToken(String authHeader) {
         try {
             return jwtUtil.resolveBearerToken(authHeader);
         } catch (JWTVerificationException e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or missing token");
         }
+    }
+
+    private PositionDTO mapToDTO(Position position) {
+        if (position == null) return null;
+        return new PositionDTO(
+                position.getId(),
+                position.getName(),
+                position.getDescription(),
+                position.getTermLength(),
+                position.getMaxCandidates(),
+                position.getIsElectable(),
+                position.getIsAutoRenew(),
+                position.getCurrentHolder() != null ? position.getCurrentHolder().getFirstName() + " " + position.getCurrentHolder().getLastName() : null,
+                position.getCurrentHolder() != null ? position.getCurrentHolder().getId() : null,
+                position.getHeldSince()
+        );
     }
 }

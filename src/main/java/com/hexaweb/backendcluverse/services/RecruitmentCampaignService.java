@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.entities.recruitement.RecruitmentCampaign;
+import com.hexaweb.backendcluverse.entities.recrutement.RecruitmentCampaign;
 import com.hexaweb.backendcluverse.repositories.RecruitmentCampaignRepository;
 import org.springframework.stereotype.Service;
 
