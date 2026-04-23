@@ -7,6 +7,8 @@ import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.entities.event.*;
 import com.hexaweb.backendcluverse.enumerations.*;
 import com.hexaweb.backendcluverse.repositories.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,8 @@ import java.util.List;
 @Transactional
 public class EventService extends EntityServiceImpl<Event, Long> {
 
+    private static final Logger log = LoggerFactory.getLogger(EventService.class);
+
     private final CampaignAccessRepository       campaignAccessRepository;
     private final EventRepository                eventRepository;
     private final ClubRepository                 clubRepository;
@@ -29,9 +33,6 @@ public class EventService extends EntityServiceImpl<Event, Long> {
     private final EventWaitingListRepository     waitingListRepository;
     private final UserRepository                 userRepository;
     private final SmsService                     smsService;
-
-    // ── NOTE: Reminder scheduling has been moved entirely to EventReminderService.
-    //          This class no longer contains @Scheduled methods to avoid double-sending SMS.
 
     public EventService(EventRepository repository,
                         ClubRepository clubRepository,
@@ -139,28 +140,16 @@ public class EventService extends EntityServiceImpl<Event, Long> {
                 .toList();
     }
 
-    /**
-     * Returns all events accessible to a club, respecting campaign visibility rules:
-     *   - No campaign           → always visible
-     *   - PUBLIC campaign       → always visible
-     *   - PRIVATE campaign      → only visible to owner club
-     *   - SHARED campaign       → visible if club has VIEW permission
-     */
     public List<Event> getAllAccessibleEvents(Long clubId) {
         return eventRepository.findAll().stream()
                 .filter(e -> e.getStatus() != EventStatus.CANCELLED)
                 .filter(e -> {
                     if (e.getCampaign() == null) return true;
-
                     Campaign c = e.getCampaign();
-
                     if (c.getVisibility() == CampaignVisibility.PUBLIC) return true;
-
                     if (c.getVisibility() == CampaignVisibility.PRIVATE) {
                         return c.getOwnerClub() != null && c.getOwnerClub().getId().equals(clubId);
                     }
-
-                    // SHARED
                     return campaignAccessRepository.findByCampaignIdAndClubId(c.getId(), clubId)
                             .map(ca -> ca.getPermissions() != null
                                     && ca.getPermissions().contains(CampaignPermission.VIEW))
@@ -185,35 +174,48 @@ public class EventService extends EntityServiceImpl<Event, Long> {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // WAITING LIST
+    // WAITING LIST — SCHEDULER (every 30s as fallback sweep)
     // ═══════════════════════════════════════════════════════════════════════
 
-    @Scheduled(fixedRate = 30000) // toutes les 30 secondes
+    @Scheduled(fixedRate = 10000)
     public void processWaitingLists() {
-
         List<Event> events = eventRepository.findAll();
-
         for (Event event : events) {
             try {
                 promoteFromWaitingList(event.getId());
             } catch (Exception e) {
-                // sécurité pour éviter crash scheduler
+                log.warn("[WaitingList] Error processing event {}: {}", event.getId(), e.getMessage());
             }
         }
     }
-    public synchronized void promoteFromWaitingList(Long eventId) {
-        promoteFromWaitingListSafe(eventId);
-    }
-    // 🔥 PROMOTION SAFE + CENTRALIZED
-    private void promoteFromWaitingListSafe(Long eventId)  {
 
+    /**
+     * FIX: now public so EventParticipantService can call it directly on cancel/delete.
+     * Single source of truth for promotion logic — direct register + SMS, no "confirm link" step.
+     */
+    // AUTO STATUS — runs every minute
+    // ═══════════════════════════════════════════════════════════════════════
+    /**
+     * ✅ FIX : normalisation E.164 ajoutée avant chaque sendSms()
+     *    → le SMS de promotion est maintenant réellement envoyé.
+     *    Méthode public + synchronized = source unique de vérité pour la promotion.
+     */
+
+    /**
+     * ✅ FIX : normalisation E.164 ajoutée avant chaque sendSms()
+     *    → le SMS de promotion est maintenant réellement envoyé.
+     *    Méthode public + synchronized = source unique de vérité pour la promotion.
+     */
+    public synchronized void promoteFromWaitingList(Long eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException("Event not found: " + eventId));
 
         long active = eventParticipantRepository.countByEventIdAndStatusNot(
                 eventId, ParticipationStatus.CANCELLED);
 
-        if (event.getCapacity() != null && active >= event.getCapacity()) return;
+        if (event.getCapacity() != null && event.getCapacity() > 0 && active >= event.getCapacity()) {
+            return; // still full
+        }
 
         List<EventWaitingList> queue =
                 waitingListRepository.findByEventIdOrderByJoinedAtAsc(eventId);
@@ -221,10 +223,13 @@ public class EventService extends EntityServiceImpl<Event, Long> {
         if (queue.isEmpty()) return;
 
         EventWaitingList first = queue.get(0);
+        Long userId = first.getUser().getId();
 
+        // Guard : déjà promu par un appel concurrent
         boolean alreadyPromoted = eventParticipantRepository
-                .findByEventIdAndUserId(eventId, first.getUser().getId())
-                .isPresent();
+                .findByEventIdAndUserId(eventId, userId)
+                .map(p -> p.getStatus() != ParticipationStatus.CANCELLED)
+                .orElse(false);
 
         if (alreadyPromoted) {
             waitingListRepository.delete(first);
@@ -236,22 +241,46 @@ public class EventService extends EntityServiceImpl<Event, Long> {
                 .user(first.getUser())
                 .status(ParticipationStatus.REGISTERED)
                 .reservedSeats(1)
+                .wantsReminder(true)
+                .reminderSent(false)
                 .build();
 
         eventParticipantRepository.save(p);
         waitingListRepository.delete(first);
-
         updateParticipantsCount(eventId);
 
-        smsService.sendSms(first.getUser().getPhone(),
-                "🎉 Place libérée ! Vous êtes inscrit à : " + event.getTitle());
+        // ✅ FIX : normaliser le numéro avant d'envoyer
+        String phone = first.getUser().getPhone();
+        String normalizedPhone = normalizePhone(phone);
+
+        if (normalizedPhone != null) {
+            boolean sent = smsService.sendSms(normalizedPhone,
+                    "🎉 Place libérée ! Vous êtes inscrit à : " + event.getTitle());
+            if (!sent) {
+                log.error("[WaitingList] ❌ SMS de promotion non envoyé à l'utilisateur {}", userId);
+            }
+        } else {
+            log.warn("[WaitingList] Numéro invalide ou absent pour l'utilisateur {} — SMS ignoré", userId);
+        }
+
+        log.info("[WaitingList] User {} promoted and registered for event '{}'",
+                userId, event.getTitle());
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // AUTO STATUS — runs every minute
-    // ═══════════════════════════════════════════════════════════════════════
-
-    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60_000)
+    /**
+     * ✅ Méthode de normalisation E.164 partagée dans EventService
+     *    (dupliquée depuis EventReminderService pour éviter une dépendance circulaire)
+     */
+    private String normalizePhone(String raw) {
+        if (raw == null || raw.isBlank()) return null;
+        String cleaned = raw.replaceAll("[\\s\\-().]+", "");
+        if (cleaned.startsWith("+"))  return cleaned.length() >= 8 ? cleaned : null;
+        if (cleaned.startsWith("00")) { cleaned = "+" + cleaned.substring(2); return cleaned.length() >= 8 ? cleaned : null; }
+        if (cleaned.length() == 8)    return "+216" + cleaned;
+        if (cleaned.length() >= 10)   return "+" + cleaned;
+        return null;
+    }
+    @Scheduled(fixedRate = 60_000)
     public void updateEventStatusAutomatically() {
         List<Event> events = eventRepository.findAll();
         LocalDateTime now  = LocalDateTime.now();

@@ -4,39 +4,37 @@ import com.hexaweb.backendcluverse.entities.event.SmsNotification;
 import com.hexaweb.backendcluverse.repositories.SmsNotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 
-/**
- * ✅ Service pour envoyer les notifications SMS
- * Peut utiliser Twilio, AWS SNS, ou un fournisseur SMS local
- */
 @Service
 public class SmsNotificationService {
 
     private static final Logger logger = LoggerFactory.getLogger(SmsNotificationService.class);
 
-    @Autowired
-    private SmsNotificationRepository smsNotificationRepository;
+    private final SmsNotificationRepository smsNotificationRepository;
+    // ✅ FIX : injecter le vrai SmsService (Twilio) au lieu du mock
+    private final SmsService smsService;
+
+    public SmsNotificationService(SmsNotificationRepository smsNotificationRepository,
+                                  SmsService smsService) {
+        this.smsNotificationRepository = smsNotificationRepository;
+        this.smsService = smsService;
+    }
 
     /**
-     * ✅ Envoyer un SMS de rappel pour un event
-     * @param participationId ID de la participation
-     * @param eventId ID de l'event
-     * @param phoneNumber Numéro de téléphone du participant
-     * @param message Message à envoyer
-     * @return SmsNotification l'objet de notification créé
+     * Envoie un SMS de rappel et sauvegarde l'historique en base.
      */
-    public SmsNotification sendReminderSms(Long participationId, Long eventId, String phoneNumber, String message) {
+    public SmsNotification sendReminderSms(Long participationId, Long eventId,
+                                           String phoneNumber, String message) {
         try {
-            // ✅ Étape 1 : Vérifier si un SMS a déjà été envoyé
+            // Ne pas envoyer si déjà envoyé pour cette participation
             if (smsNotificationRepository.existsByParticipationIdAndStatus(participationId, "SENT")) {
-                logger.warn("[SMS] Notification already sent for participation: {}", participationId);
+                logger.warn("[SMS] Déjà envoyé pour participation {}", participationId);
                 return null;
             }
 
-            // ✅ Étape 2 : Créer l'objet SmsNotification
             SmsNotification sms = new SmsNotification();
             sms.setParticipationId(participationId);
             sms.setEventId(eventId);
@@ -45,69 +43,32 @@ public class SmsNotificationService {
             sms.setStatus("PENDING");
             sms.setSentAt(LocalDateTime.now());
 
-            // ✅ Étape 3 : INTÉGRATION AVEC FOURNISSEUR SMS (à implémenter)
-            // Options : Twilio, AWS SNS, Vonage, etc.
-            boolean sent = this.sendViaTwilio(phoneNumber, message);
+            // ✅ FIX : appel au vrai SmsService Twilio (plus de mock)
+            boolean sent = smsService.sendSms(phoneNumber, message);
 
-            // ✅ Étape 4 : Mettre à jour le statut
             if (sent) {
                 sms.setStatus("SENT");
                 sms.setSmsProviderReference("twilio-" + System.currentTimeMillis());
-                logger.info("[SMS] ✅ Reminder sent to {} for event {}", phoneNumber, eventId);
+                logger.info("[SMS] ✅ Rappel envoyé à {} pour event {}", phoneNumber, eventId);
             } else {
                 sms.setStatus("FAILED");
-                sms.setErrorMessage("Failed to send via SMS provider");
-                logger.error("[SMS] ❌ Failed to send SMS to {}", phoneNumber);
+                sms.setErrorMessage("Échec d'envoi via Twilio");
+                logger.error("[SMS] ❌ Échec envoi SMS à {}", phoneNumber);
             }
 
-            // ✅ Étape 5 : Sauvegarder en base de données
             return smsNotificationRepository.save(sms);
 
         } catch (Exception e) {
-            logger.error("[SMS] Exception sending reminder: {}", e.getMessage(), e);
+            logger.error("[SMS] Exception: {}", e.getMessage(), e);
             return null;
         }
     }
 
-    /**
-     * ✅ STUB : Envoyer via Twilio
-     * À remplacer par l'intégration réelle Twilio
-     * @param phoneNumber Numéro cible
-     * @param message Message à envoyer
-     * @return true si succès, false sinon
-     */
-    private boolean sendViaTwilio(String phoneNumber, String message) {
-        try {
-            // TODO: Intégration Twilio
-            // TwilioRestClient client = Twilio.getRestClient();
-            // Message msg = Message.creator(
-            //     new PhoneNumber("+1234567890"),  // From number
-            //     new PhoneNumber(phoneNumber),     // To number
-            //     message
-            // ).create();
-            // return msg.getSid() != null;
-
-            // ✅ POUR TESTS : Simuler l'envoi
-            logger.debug("[Twilio Mock] Sending SMS to {} : {}", phoneNumber, message);
-            return true;
-
-        } catch (Exception e) {
-            logger.error("[Twilio] Error: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * ✅ Vérifier si un SMS a déjà été envoyé
-     */
     public boolean hasReminderBeenSent(Long participationId) {
         return smsNotificationRepository.existsByParticipationIdAndStatus(participationId, "SENT");
     }
 
-    /**
-     * ✅ Obtenir l'historique des SMS pour une participation
-     */
-    public java.util.List<SmsNotification> getSmsHistory(Long participationId) {
+    public List<SmsNotification> getSmsHistory(Long participationId) {
         return smsNotificationRepository.findByParticipationId(participationId);
     }
 }
