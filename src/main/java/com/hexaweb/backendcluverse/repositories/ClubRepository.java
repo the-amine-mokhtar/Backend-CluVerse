@@ -7,6 +7,7 @@ import java.util.Optional;
 
 public interface ClubRepository extends JpaRepository<Club, Long> {
     Optional<Club> findByActivationCode(String activationCode);
+    Optional<Club> findFirstByEmailOrderByIdDesc(String email);
     boolean existsByEmail(String email);
 }
 

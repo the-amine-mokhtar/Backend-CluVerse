@@ -68,6 +68,39 @@ public class AuthController {
         }
     }
 
+    /**
+     * OAuth2 club selection – called when an OAuth2 user has multiple active memberships.
+     * The frontend sends the temporary JWT (role=PENDING) + the chosen clubId.
+     */
+    @PostMapping("/oauth2-select-club")
+    public ResponseEntity<AuthResponse> oauth2SelectClub(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody java.util.Map<String, Long> body) {
+        try {
+            String tempToken = jwtUtil.resolveBearerToken(authHeader);
+            Long userId = jwtUtil.extractUserId(tempToken);
+            Long clubId = body.get("clubId");
+
+            if (clubId == null) {
+                return ResponseEntity.badRequest().body(new AuthResponse(null, "clubId is required"));
+            }
+
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            com.hexaweb.backendcluverse.entities.Membership membership = user.getMemberships().stream()
+                    .filter(m -> m.getClub().getId().equals(clubId) && m.isActive())
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("No active membership in selected club"));
+
+            String token = jwtUtil.generateToken(user, clubId,
+                    membership.getRole().name(), user.getFirstName(), user.getLastName());
+            return ResponseEntity.ok(new AuthResponse(token, user.getEmail()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(new AuthResponse(null, e.getMessage()));
+        }
+    }
+
     @PostMapping("/refresh-token")
     public ResponseEntity<AuthResponse> refreshToken(@RequestHeader("Authorization") String authHeader) {
 

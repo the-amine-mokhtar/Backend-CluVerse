@@ -18,7 +18,7 @@ public class AdminInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         String adminEmail = "admin@cluverse.tn";
-        if (userRepository.findByEmail(adminEmail).isEmpty()) {
+        if (userRepository.findFirstByEmailOrderByIdDesc(adminEmail).isEmpty()) {
             User admin = new User();
             admin.setFirstName("cluverse");
             admin.setLastName("admin");
