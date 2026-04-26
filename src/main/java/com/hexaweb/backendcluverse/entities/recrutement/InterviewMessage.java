@@ -4,41 +4,25 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 @Entity
 @Getter
 @Setter
-@Table(name = "interview_messages")
+@Table(name = "interview_message")
 public class InterviewMessage {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "session_id", length = 36)
+    @Column(nullable = false)
     private String sessionId;
 
-    @Column(name = "role", length = 50)
+    @Column(nullable = false)
     private String role;
 
-    @Column(name = "text", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String text;
 
-    @Column(name = "timestamp_ms")
+    @Column(nullable = false)
     private Long timestampMs;
-
-    @Column(name = "elapsed_sec")
-    private Integer elapsedSec;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        if (this.id == null) {
-            this.id = UUID.randomUUID().toString();
-        }
-        this.createdAt = LocalDateTime.now();
-    }
 }

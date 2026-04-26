@@ -8,11 +8,14 @@ import lombok.Setter;
 
 import java.io.Serializable;
 
+import lombok.EqualsAndHashCode;
+
 @Embeddable
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode
 public class UserSkillId implements Serializable {
     private Long userId;
     private Long skillId;

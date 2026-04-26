@@ -4,12 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 @Entity
 @Data
 @Table(name = "interview_configs")
-@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class InterviewConfig {
 
     @Id
@@ -18,7 +15,6 @@ public class InterviewConfig {
 
     @ManyToOne
     @JoinColumn(name = "application_id")
-    @JsonIgnoreProperties({ "interviewConfigs", "recruitmentCampaigns", "answers" })
     private Application application;
 
     private Integer duration;

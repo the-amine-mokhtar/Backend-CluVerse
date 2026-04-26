@@ -17,7 +17,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +26,7 @@ public class Application {
     private String candidateName;
     private String candidateEmail;
     private String candidatePhone;
+
 
     private String motivationLetter;
 
@@ -42,7 +43,6 @@ public class Application {
     private List<ApplicationAnswer> answers = new ArrayList<>();
 
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnoreProperties("application")
     private List<InterviewConfig> interviewConfigs = new ArrayList<>();
 
 }

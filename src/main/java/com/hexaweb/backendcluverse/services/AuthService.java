@@ -1,29 +1,22 @@
 package com.hexaweb.backendcluverse.services;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.mindrot.jbcrypt.BCrypt;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.hexaweb.backendcluverse.dto.AuthResponse;
-import com.hexaweb.backendcluverse.dto.LoginClubRequest;
-import com.hexaweb.backendcluverse.dto.LoginRequest;
-import com.hexaweb.backendcluverse.dto.MemberLoginRequest;
-import com.hexaweb.backendcluverse.dto.MembershipDto;
-import com.hexaweb.backendcluverse.dto.SignupRequest;
+import com.hexaweb.backendcluverse.dto.*;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.Membership;
-import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.enumerations.RoleType;
+import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.repositories.ClubRepository;
 import com.hexaweb.backendcluverse.repositories.MembershipRepository;
 import com.hexaweb.backendcluverse.repositories.UserRepository;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
-
 import jakarta.transaction.Transactional;
+import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService {

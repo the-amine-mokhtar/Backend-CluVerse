@@ -18,10 +18,10 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
 
-    public ReservationService(ReservationRepository repository,
-            EventRepository eventRepository,
-            ResourceRepository resourceRepository,
-            UserRepository userRepository) {
+    public ReservationService(ReservationRepository repository, 
+                              EventRepository eventRepository,
+                              ResourceRepository resourceRepository,
+                              UserRepository userRepository) {
         super(repository);
         this.eventRepository = eventRepository;
         this.resourceRepository = resourceRepository;
@@ -30,12 +30,12 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
 
     public Reservation createReservation(ReservationRequest req) {
         Event e = eventRepository.findById(req.getEventId())
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+            .orElseThrow(() -> new RuntimeException("Event not found"));
         Resource r = resourceRepository.findById(req.getResourceId())
-                .orElseThrow(() -> new RuntimeException("Resource not found"));
+            .orElseThrow(() -> new RuntimeException("Resource not found"));
         User u = userRepository.findById(req.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
         Reservation res = new Reservation();
         mapRequestToEntity(req, res);
         res.setEvent(e);
@@ -46,14 +46,14 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
 
     public Reservation updateReservation(Long id, ReservationRequest req) {
         Reservation res = findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+            .orElseThrow(() -> new RuntimeException("Reservation not found"));
         Event e = eventRepository.findById(req.getEventId())
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+            .orElseThrow(() -> new RuntimeException("Event not found"));
         Resource r = resourceRepository.findById(req.getResourceId())
-                .orElseThrow(() -> new RuntimeException("Resource not found"));
+            .orElseThrow(() -> new RuntimeException("Resource not found"));
         User u = userRepository.findById(req.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
         mapRequestToEntity(req, res);
         res.setEvent(e);
         res.setResource(r);
