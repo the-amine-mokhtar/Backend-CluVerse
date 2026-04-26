@@ -50,7 +50,7 @@ public class AuthService {
         Club club = clubRepository.findById(request.getClubId())
                 .orElseThrow(() -> new RuntimeException("Club not found"));
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (userRepository.findFirstByEmailOrderByIdDesc(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already taken!");
         }
 
@@ -78,7 +78,7 @@ public class AuthService {
     }
 
     public List<MembershipDto> login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findFirstByEmailOrderByIdDesc(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
@@ -98,7 +98,7 @@ public class AuthService {
     }
 
     public AuthResponse loginWithClub(LoginClubRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findFirstByEmailOrderByIdDesc(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Invalid email or password"));
 
         if (!BCrypt.checkpw(request.getPassword(), user.getPassword())) {
@@ -116,6 +116,38 @@ public class AuthService {
 
     @Transactional
     public AuthResponse loginWithIdentifier(MemberLoginRequest request) {
+        // First check if this identifier belongs to a pending Club activation
+        com.hexaweb.backendcluverse.entities.Club pendingClub = clubRepository.findByActivationCode(request.getConnectionIdentifier()).orElse(null);
+        
+        if (pendingClub != null) {
+            // Check password against the temporary password
+            if (pendingClub.getTemporaryPassword() != null && pendingClub.getTemporaryPassword().equals(request.getPassword())) {
+                // Auto-verify! Create the president user
+                User president = new User();
+                president.setEmail(pendingClub.getEmail());
+                president.setFirstName("President");
+                president.setLastName(pendingClub.getName());
+                president.setPassword(BCrypt.hashpw(pendingClub.getTemporaryPassword(), BCrypt.gensalt()));
+                president.setConnectionIdentifier(pendingClub.getActivationCode());
+                userRepository.save(president);
+
+                Membership membership = new Membership();
+                membership.setUser(president);
+                membership.setClub(pendingClub);
+                membership.setRole(RoleType.PRESIDENT);
+                membership.setJoinDate(java.time.LocalDate.now());
+                membership.setActive(true);
+                membershipRepository.save(membership);
+
+                pendingClub.setIsClubVerified(true);
+                pendingClub.setActivationCode(null);
+                pendingClub.setTemporaryPassword(null);
+                clubRepository.save(pendingClub);
+                
+                // We don't return here, we let the normal flow below find the newly created user!
+            }
+        }
+
         User user = userRepository.findByConnectionIdentifier(request.getConnectionIdentifier())
                 .orElseThrow(() -> new RuntimeException("Identifiant ou mot de passe invalide"));
 

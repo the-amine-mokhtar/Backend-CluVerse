@@ -8,15 +8,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TransportRepository extends JpaRepository<Transport, Long> {
-	List<Transport> findByVehicle_IdAndStatusAndScheduledDateBetween(
+	List<Transport> findByVehicle_IdAndStatusInAndScheduledDateBetween(
 		Long vehicleId,
-		TransportStatus status,
+		List<TransportStatus> statuses,
 		LocalDateTime startDate,
 		LocalDateTime endDate
 	);
 
-	List<Transport> findByStatusAndScheduledDateBetween(
-		TransportStatus status,
+	List<Transport> findByStatusInAndScheduledDateBetween(
+		List<TransportStatus> statuses,
 		LocalDateTime startDate,
 		LocalDateTime endDate
 	);

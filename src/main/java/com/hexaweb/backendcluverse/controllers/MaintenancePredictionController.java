@@ -3,6 +3,7 @@ package com.hexaweb.backendcluverse.controllers;
 import com.hexaweb.backendcluverse.dto.MaintenancePredictionResponse;
 import com.hexaweb.backendcluverse.entities.logistics.Vehicle;
 import com.hexaweb.backendcluverse.entities.logistics.VehicleMaintenance;
+import com.hexaweb.backendcluverse.enumerations.MaintenanceStatus;
 import com.hexaweb.backendcluverse.repositories.VehicleMaintenanceRepository;
 import com.hexaweb.backendcluverse.repositories.VehicleRepository;
 import com.hexaweb.backendcluverse.services.MaintenancePredictionService;
@@ -10,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/maintenance-prediction")
@@ -65,5 +69,41 @@ public class MaintenancePredictionController {
             maintenance.getOilLevel(),
             maintenance.getTotalTransports()
         );
+    }
+
+    @GetMapping("/vehicles-at-risk")
+    public List<MaintenancePredictionResponse> getVehiclesAtRisk() {
+        // 1. Get all vehicles
+        List<Vehicle> allVehicles = vehicleRepository.findAll();
+
+        // 2. For each vehicle, get only the LATEST maintenance record
+        return allVehicles.stream()
+            .map(vehicle -> {
+                return maintenanceRepository.findTopByVehicleIdOrderByRecordDateDesc(vehicle.getId())
+                    .map(latest -> {
+                        // 3. Predict based on LATEST state
+                        MaintenancePredictionResponse prediction = predictionService.predict(
+                            vehicle.getId(),
+                            vehicle.getModel(),
+                            vehicle.getPlateNumber(),
+                            latest.getKmSinceLastService(),
+                            latest.getDaysSinceLastService(),
+                            latest.getFuelLevel(),
+                            latest.getEngineCondition(),
+                            latest.getTireCondition(),
+                            latest.getBrakeCondition(),
+                            latest.getOilLevel(),
+                            latest.getTotalTransports()
+                        );
+                        
+                        // 4. Only return if it's actually at risk (WARNING or CRITICAL)
+                        if ("GOOD".equals(prediction.getRiskLevel())) {
+                            return null;
+                        }
+                        return prediction;
+                    }).orElse(null);
+            })
+            .filter(p -> p != null)
+            .collect(Collectors.toList());
     }
 }

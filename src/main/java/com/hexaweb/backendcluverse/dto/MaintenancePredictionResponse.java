@@ -17,6 +17,9 @@ public class MaintenancePredictionResponse {
     private int predictedWeeklyTransports;
     private double usagePressureScore;
     private double fleetUsageRatio;
+    private int estimatedDaysUntilFailure;
+    private int predictedMonthlyTransports;
+    private double avgKmPerTransport;
 
     public MaintenancePredictionResponse() {}
 
@@ -84,4 +87,13 @@ public class MaintenancePredictionResponse {
 
     public double getFleetUsageRatio() { return fleetUsageRatio; }
     public void setFleetUsageRatio(double fleetUsageRatio) { this.fleetUsageRatio = fleetUsageRatio; }
+
+    public int getEstimatedDaysUntilFailure() { return estimatedDaysUntilFailure; }
+    public void setEstimatedDaysUntilFailure(int estimatedDaysUntilFailure) { this.estimatedDaysUntilFailure = estimatedDaysUntilFailure; }
+
+    public int getPredictedMonthlyTransports() { return predictedMonthlyTransports; }
+    public void setPredictedMonthlyTransports(int predictedMonthlyTransports) { this.predictedMonthlyTransports = predictedMonthlyTransports; }
+
+    public double getAvgKmPerTransport() { return avgKmPerTransport; }
+    public void setAvgKmPerTransport(double avgKmPerTransport) { this.avgKmPerTransport = avgKmPerTransport; }
 }

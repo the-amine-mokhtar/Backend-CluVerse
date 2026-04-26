@@ -120,11 +120,27 @@ public class VehicleMaintenanceController {
         }
         
         // Use calculated status if DTO status is not explicitly provided
-        maintenance.setStatus(dto.getStatus() != null ? dto.getStatus() : calculatedStatus);
+        MaintenanceStatus finalStatus = dto.getStatus() != null ? dto.getStatus() : calculatedStatus;
+        maintenance.setStatus(finalStatus);
+        
+        // AUTO-RESOLVE: If the new maintenance record shows the vehicle is GOOD,
+        // automatically resolve all previous WARNING/CRITICAL alerts for this vehicle
+        if (finalStatus == MaintenanceStatus.GOOD) {
+            List<VehicleMaintenance> previousAlerts = maintenanceRepository.findByVehicleIdOrderByRecordDateDesc(vehicle.getId())
+                .stream()
+                .filter(m -> !m.isResolved() && (m.getStatus() == MaintenanceStatus.WARNING || m.getStatus() == MaintenanceStatus.CRITICAL))
+                .toList();
+            
+            for (VehicleMaintenance alert : previousAlerts) {
+                alert.setResolved(true);
+                maintenanceRepository.save(alert);
+                System.out.println("[VehicleMaintenanceController] ✓ Auto-resolved previous alert ID " + alert.getId() + " for vehicle " + vehicle.getId());
+            }
+        }
         
         // Log the synchronized values for debugging
         System.out.println("[VehicleMaintenanceController] ✓ SAVED maintenance record for vehicle " + vehicle.getId() + 
-                         ": FINAL fuelLevel=" + syncedFuelLevel + "%, FINAL mileage=" + syncedMileage + " km");
+                         ": FINAL fuelLevel=" + syncedFuelLevel + "%, FINAL mileage=" + syncedMileage + " km, STATUS=" + finalStatus);
         
         return maintenanceRepository.save(maintenance);
     }
@@ -168,6 +184,22 @@ public class VehicleMaintenanceController {
         
         existing.setStatus(maintenance.getStatus() != null && !maintenance.getStatus().equals(MaintenanceStatus.GOOD) 
             ? maintenance.getStatus() : calculatedStatus);
+        
+        // AUTO-RESOLVE: If the updated maintenance record shows the vehicle is GOOD,
+        // automatically resolve all previous WARNING/CRITICAL alerts for this vehicle
+        if (existing.getStatus() == MaintenanceStatus.GOOD) {
+            List<VehicleMaintenance> previousAlerts = maintenanceRepository.findByVehicleIdOrderByRecordDateDesc(existing.getVehicle().getId())
+                .stream()
+                .filter(m -> !m.isResolved() && m.getId() != existing.getId() && 
+                        (m.getStatus() == MaintenanceStatus.WARNING || m.getStatus() == MaintenanceStatus.CRITICAL))
+                .toList();
+            
+            for (VehicleMaintenance alert : previousAlerts) {
+                alert.setResolved(true);
+                maintenanceRepository.save(alert);
+                System.out.println("[VehicleMaintenanceController] ✓ Auto-resolved previous alert ID " + alert.getId() + " for vehicle " + existing.getVehicle().getId());
+            }
+        }
         
         return maintenanceRepository.save(existing);
     }

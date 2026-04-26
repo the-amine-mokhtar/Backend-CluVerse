@@ -40,6 +40,9 @@ public class Transport {
     
     @Column(name = "distance")
     private Double distance;  // Distance in km
+
+    @Column(name = "duration")
+    private Double duration;  // Duration in minutes
     
     /**
      * Carburant consommé pour ce transport (en %)
