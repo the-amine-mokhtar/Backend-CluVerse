@@ -13,13 +13,16 @@ public class CorsConfig {
     @Value("${app.sponsor-files-dir}")
     private String sponsorFilesDir;
 
+    @Value("${app.base-url:http://localhost:4200}")
+    private String frontendBaseUrl;
+
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") 
-                        .allowedOrigins("http://localhost:4200") 
+                        .allowedOrigins(frontendBaseUrl) 
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS");
             }
 
