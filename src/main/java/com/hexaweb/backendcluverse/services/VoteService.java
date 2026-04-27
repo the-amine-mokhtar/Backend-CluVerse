@@ -60,4 +60,18 @@ public class VoteService extends EntityServiceImpl<Vote, Long> {
         voteRepository.flush();
         return saved;
     }
+
+    public Vote updateVote(Long id, VoteRequest req) {
+        Vote vote = voteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vote not found"));
+        
+        if (req.getCandidateId() != null) {
+            Candidate candidate = candidateRepository.findById(req.getCandidateId())
+                    .orElseThrow(() -> new RuntimeException("Candidate not found"));
+            vote.setCandidate(candidate);
+            vote.setElection(candidate.getElection());
+            vote.setPosition(candidate.getPosition());
+        }
+        return voteRepository.save(vote);
+    }
 }

@@ -1,0 +1,129 @@
+### Test Maintenance API
+
+@baseUrl = http://localhost:8080
+@vehicleId = 1
+@maintenanceId = 1
+@token = eyJhbGciOiJIUzI1NiJ9... (ajoute ton token ici)
+
+### 📋 1️⃣ Liste toutes les maintenances
+GET {{baseUrl}}/api/vehicle-maintenance
+Authorization: Bearer {{token}}
+
+###
+
+### 🔍 2️⃣ Récupère maintenances du véhicule 1
+GET {{baseUrl}}/api/vehicle-maintenance/vehicle/{{vehicleId}}
+Authorization: Bearer {{token}}
+
+###
+
+### 🚨 3️⃣ Récupère les ALERTES (WARNING + CRITICAL)
+GET {{baseUrl}}/api/vehicle-maintenance/alerts
+Authorization: Bearer {{token}}
+
+###
+
+### ➕ 4️⃣ AJOUTE une nouvelle maintenance
+POST {{baseUrl}}/api/vehicle-maintenance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "recordDate": "2026-04-17T14:30:00",
+  "fuelLevel": 85,
+  "engineCondition": 90,
+  "tireCondition": 80,
+  "brakeCondition": 95,
+  "oilLevel": 88,
+  "mileage": 5000,
+  "kmSinceLastService": 1000,
+  "daysSinceLastService": 10,
+  "totalTransports": 25,
+  "status": "GOOD",
+  "notes": "Maintenance test - Véhicule en bon état",
+  "resolved": false
+}
+
+###
+
+### ➕ 5️⃣ AJOUTE une maintenance MAUVAISE
+POST {{baseUrl}}/api/vehicle-maintenance
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "recordDate": "2026-04-17T15:00:00",
+  "fuelLevel": 15,
+  "engineCondition": 35,
+  "tireCondition": 25,
+  "brakeCondition": 40,
+  "oilLevel": 20,
+  "mileage": 150000,
+  "kmSinceLastService": 14000,
+  "daysSinceLastService": 350,
+  "totalTransports": 450,
+  "status": "CRITICAL",
+  "notes": "ATTENTION! Véhicule en très mauvais état",
+  "resolved": false
+}
+
+###
+
+### ✏️ 6️⃣ MODIFIE une maintenance (ID=1)
+PUT {{baseUrl}}/api/vehicle-maintenance/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "recordDate": "2026-04-17T16:00:00",
+  "fuelLevel": 75,
+  "engineCondition": 85,
+  "tireCondition": 75,
+  "brakeCondition": 88,
+  "oilLevel": 78,
+  "mileage": 5050,
+  "kmSinceLastService": 1050,
+  "daysSinceLastService": 11,
+  "totalTransports": 26,
+  "status": "GOOD",
+  "notes": "MODIFIÉ - État amélioré",
+  "resolved": false
+}
+
+###
+
+### ✓ 7️⃣ Marquer comme RÉSOLU (ID=1)
+PUT {{baseUrl}}/api/vehicle-maintenance/1/resolve
+Authorization: Bearer {{token}}
+
+###
+
+### 🤖 8️⃣ PRÉDICTION IA: Analyser l'état d'un véhicule
+POST {{baseUrl}}/api/maintenance-prediction/1/analyze
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "vehicleId": 1,
+  "recordDate": "2026-04-17T17:00:00",
+  "fuelLevel": 45,
+  "engineCondition": 55,
+  "tireCondition": 40,
+  "brakeCondition": 60,
+  "oilLevel": 50,
+  "mileage": 120000,
+  "kmSinceLastService": 8500,
+  "daysSinceLastService": 180,
+  "totalTransports": 300,
+  "status": "WARNING",
+  "notes": "Test prédiction IA"
+}
+
+###
+
+### 🤖 9️⃣ PRÉDICTION IA: Depuis le dernier enregistrement
+GET {{baseUrl}}/api/maintenance-prediction/1
+Authorization: Bearer {{token}}
