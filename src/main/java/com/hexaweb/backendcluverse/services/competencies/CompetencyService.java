@@ -193,7 +193,7 @@ public class CompetencyService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Club id is required");
         }
 
-        Pageable topThree = PageRequest.of(0, 3);
+        Pageable topFive = PageRequest.of(0, 5);
 
         return new CompetencyStatsResponse(
                 clubId,
@@ -201,7 +201,7 @@ public class CompetencyService {
                 memberCompetencyRepository.countByClubId(clubId),
                 competencyRepository.findCompetencyMemberCountsByClubId(clubId),
                 competencyRepository.findCategoryStatsByClubId(clubId),
-                competencyRepository.findWeakestCompetenciesByClubId(clubId, topThree)
+                competencyRepository.findWeakestCompetenciesByClubId(clubId, topFive)
         );
     }
 

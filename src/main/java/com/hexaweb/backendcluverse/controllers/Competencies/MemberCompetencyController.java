@@ -48,11 +48,6 @@ public class MemberCompetencyController {
         return ResponseEntity.ok(memberCompetencyService.getByUser(userId));
     }
 
-    @GetMapping("/member/{userId}")
-    public ResponseEntity<List<MemberCompetencyResponse>> getByUserMemberAlias(@PathVariable Long userId) {
-        return ResponseEntity.ok(memberCompetencyService.getByUser(userId));
-    }
-
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<MemberCompetencyResponse>> getByClub(@PathVariable Long clubId) {
         return ResponseEntity.ok(memberCompetencyService.getByClub(clubId));
