@@ -72,7 +72,7 @@ public class BudgetAlertEmailService {
             String department = safeText(alert.department(), "Club-wide");
             String level = normalizeLevel(alert.level());
             int utilization = alert.utilization() != null ? alert.utilization() : 0;
-            int threshold = alert.reachedThreshold() != null ? alert.reachedThreshold() : 0;
+            int threshold = alert.reachedThreshold() != null? alert.reachedThreshold() : 0;
             int clampedUtil = Math.min(utilization, 100);
 
             AlertStyle style = getAlertStyle(level);

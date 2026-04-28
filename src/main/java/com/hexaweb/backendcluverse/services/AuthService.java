@@ -1,22 +1,29 @@
 package com.hexaweb.backendcluverse.services;
 
-import com.hexaweb.backendcluverse.dto.*;
-import com.hexaweb.backendcluverse.entities.Club;
-import com.hexaweb.backendcluverse.entities.Membership;
-import com.hexaweb.backendcluverse.enumerations.RoleType;
-import com.hexaweb.backendcluverse.entities.User;
-import com.hexaweb.backendcluverse.repositories.ClubRepository;
-import com.hexaweb.backendcluverse.repositories.MembershipRepository;
-import com.hexaweb.backendcluverse.repositories.UserRepository;
-import com.hexaweb.backendcluverse.utils.JwtUtil;
-import jakarta.transaction.Transactional;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.hexaweb.backendcluverse.dto.AuthResponse;
+import com.hexaweb.backendcluverse.dto.LoginClubRequest;
+import com.hexaweb.backendcluverse.dto.LoginRequest;
+import com.hexaweb.backendcluverse.dto.MemberLoginRequest;
+import com.hexaweb.backendcluverse.dto.MembershipDto;
+import com.hexaweb.backendcluverse.dto.SignupRequest;
+import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.Membership;
+import com.hexaweb.backendcluverse.entities.User;
+import com.hexaweb.backendcluverse.enumerations.RoleType;
+import com.hexaweb.backendcluverse.repositories.ClubRepository;
+import com.hexaweb.backendcluverse.repositories.MembershipRepository;
+import com.hexaweb.backendcluverse.repositories.UserRepository;
+import com.hexaweb.backendcluverse.utils.JwtUtil;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class AuthService {
@@ -39,7 +46,7 @@ public class AuthService {
         if (request.getClubId() == null) {
             throw new RuntimeException("club_id is required");
         }
-        
+
         Club club = clubRepository.findById(request.getClubId())
                 .orElseThrow(() -> new RuntimeException("Club not found"));
 
@@ -111,7 +118,7 @@ public class AuthService {
     public AuthResponse loginWithIdentifier(MemberLoginRequest request) {
         // First check if this identifier belongs to a pending Club activation
         com.hexaweb.backendcluverse.entities.Club pendingClub = clubRepository.findByActivationCode(request.getConnectionIdentifier()).orElse(null);
-        
+
         if (pendingClub != null) {
             // Check password against the temporary password
             if (pendingClub.getTemporaryPassword() != null && pendingClub.getTemporaryPassword().equals(request.getPassword())) {
@@ -136,7 +143,7 @@ public class AuthService {
                 pendingClub.setActivationCode(null);
                 pendingClub.setTemporaryPassword(null);
                 clubRepository.save(pendingClub);
-                
+
                 // We don't return here, we let the normal flow below find the newly created user!
             }
         }

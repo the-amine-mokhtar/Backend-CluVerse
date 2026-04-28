@@ -1,6 +1,11 @@
 package com.hexaweb.backendcluverse.entities.sponsoring;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.hexaweb.backendcluverse.entities.finance.Transaction;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -12,9 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Getter
@@ -33,5 +35,8 @@ public class Sponsor {
     @OneToMany(mappedBy = "sponsor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Sponsorship> sponsorships = new ArrayList<>();
-}
 
+    @OneToMany(mappedBy = "sponsor", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Transaction> transactions = new ArrayList<>();
+}
