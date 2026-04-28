@@ -204,7 +204,6 @@ public class CompetencySessionService {
                 .toList();
 
         participantRepository.saveAll(participants);
-        saved.setParticipants(new ArrayList<>(participants));
 
         return mapSession(saved, buildCompetencyMap(Set.of(saved.getCompetencyId())), buildUserMap(extractRelevantUserIds(saved)), null, false);
     }
@@ -227,7 +226,6 @@ public class CompetencySessionService {
         session.setReportSummary(resolveReportSummary(request));
 
         CompetencySession saved = sessionRepository.save(session);
-        saved.setParticipants(participants);
 
         // On closing a session, attended members progress by one level toward target.
         for (CompetencySessionParticipant participant : participants) {
@@ -274,7 +272,6 @@ public class CompetencySessionService {
             existing.addAll(toCreate);
         }
 
-        session.setParticipants(existing);
         return mapParticipants(session, buildUserMap(extractParticipantIds(session)));
     }
 
@@ -282,7 +279,6 @@ public class CompetencySessionService {
     public List<CompetencySessionParticipantResponse> updateAttendance(Long sessionId, List<SessionAttendanceUpdate> attendance) {
         CompetencySession session = findSession(sessionId);
         List<CompetencySessionParticipant> updated = updateAttendanceInternal(sessionId, attendance);
-        session.setParticipants(updated);
         return mapParticipants(session, buildUserMap(extractParticipantIds(session)));
     }
 
@@ -519,7 +515,6 @@ public class CompetencySessionService {
             return session.getParticipants();
         }
         List<CompetencySessionParticipant> loaded = participantRepository.findBySession_Id(session.getId());
-        session.setParticipants(loaded);
         return loaded;
     }
 
