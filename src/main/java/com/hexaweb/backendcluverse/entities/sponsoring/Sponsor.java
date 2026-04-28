@@ -40,4 +40,3 @@ public class Sponsor {
     @JsonIgnore
     private List<Transaction> transactions = new ArrayList<>();
 }
-

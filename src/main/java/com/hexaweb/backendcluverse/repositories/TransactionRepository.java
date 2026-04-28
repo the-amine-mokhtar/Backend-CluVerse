@@ -14,4 +14,3 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 	List<Transaction> findBySponsorIdAndDateBetween(Long sponsorId, LocalDate startDate, LocalDate endDate);
 	List<Transaction> findBySponsorIdAndTypeAndDateBetween(Long sponsorId, TransactionType type, LocalDate startDate, LocalDate endDate);
 }
-

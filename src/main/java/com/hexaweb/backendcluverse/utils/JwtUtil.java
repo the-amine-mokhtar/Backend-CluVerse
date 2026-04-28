@@ -27,7 +27,7 @@ public class JwtUtil {
                 .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .sign(Algorithm.HMAC512(SECRET.getBytes()));
     }
-    
+
     public String validateTokenAndRetrieveSubject(String token) throws JWTVerificationException {
         return JWT.require(Algorithm.HMAC512(SECRET.getBytes()))
                 .build()

@@ -46,7 +46,7 @@ public class AuthService {
         if (request.getClubId() == null) {
             throw new RuntimeException("club_id is required");
         }
-        
+
         Club club = clubRepository.findById(request.getClubId())
                 .orElseThrow(() -> new RuntimeException("Club not found"));
 
@@ -118,7 +118,7 @@ public class AuthService {
     public AuthResponse loginWithIdentifier(MemberLoginRequest request) {
         // First check if this identifier belongs to a pending Club activation
         com.hexaweb.backendcluverse.entities.Club pendingClub = clubRepository.findByActivationCode(request.getConnectionIdentifier()).orElse(null);
-        
+
         if (pendingClub != null) {
             // Check password against the temporary password
             if (pendingClub.getTemporaryPassword() != null && pendingClub.getTemporaryPassword().equals(request.getPassword())) {
@@ -143,7 +143,7 @@ public class AuthService {
                 pendingClub.setActivationCode(null);
                 pendingClub.setTemporaryPassword(null);
                 clubRepository.save(pendingClub);
-                
+
                 // We don't return here, we let the normal flow below find the newly created user!
             }
         }

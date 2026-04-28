@@ -1,6 +1,5 @@
 package com.hexaweb.backendcluverse.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.enumerations.RoleType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -13,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import java.time.LocalDate;
@@ -22,7 +23,7 @@ import java.time.LocalDate;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Membership {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,3 +43,4 @@ public class Membership {
     @Enumerated(EnumType.STRING)
     private RoleType role;
 }
+
