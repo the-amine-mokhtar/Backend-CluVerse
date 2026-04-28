@@ -102,9 +102,9 @@ htmlBody.append("\n");
 htmlBody.append("    <p>Nous vous recommandons de procéder à un réapprovisionnement dans les plus brefs délais afin d'éviter toute rupture de stock pouvant impacter les opérations.</p>\n");
 htmlBody.append("\n");
 
-htmlBody.append("    <div class=\"button-container\">\n");
-htmlBody.append("      <a href=\"").append(resourceLink).append("\" class=\"button\">✏️ Modifier la ressource</a>\n");
-htmlBody.append("    </div>\n");
+// htmlBody.append("    <div class=\"button-container\">\n");
+//htmlBody.append("      <a href=\"").append(resourceLink).append("\" class=\"button\">✏️ Modifier la ressource</a>\n");
+// htmlBody.append("    </div>\n");
 
 htmlBody.append("\n");
 htmlBody.append("    <p>Merci de traiter cette alerte dès que possible.</p>\n");

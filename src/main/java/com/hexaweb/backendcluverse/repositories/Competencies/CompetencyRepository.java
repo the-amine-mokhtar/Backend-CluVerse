@@ -1,18 +1,19 @@
 package com.hexaweb.backendcluverse.repositories.Competencies;
 
+import com.hexaweb.backendcluverse.dto.Competencies.CompetencyResponse;
 import com.hexaweb.backendcluverse.dto.Competencies.CompetencyStatsCategoryResponse;
 import com.hexaweb.backendcluverse.dto.Competencies.CompetencyStatsCompetencyResponse;
 import com.hexaweb.backendcluverse.dto.Competencies.CompetencyStatsWeakCompetencyResponse;
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyResponse;
 import com.hexaweb.backendcluverse.entities.competencies.Competency;
-import com.hexaweb.backendcluverse.entities.competencies.MemberCompetency;
 import com.hexaweb.backendcluverse.enumerations.CompetencyType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.domain.Pageable;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface CompetencyRepository extends JpaRepository<Competency, Long> {
@@ -26,6 +27,10 @@ public interface CompetencyRepository extends JpaRepository<Competency, Long> {
             "c.id, c.name, c.description, c.category, c.clubId" +
             ") from Competency c where c.id = :id")
     Optional<CompetencyResponse> findResponseById(@Param("id") Long id);
+
+    // Batch query optimization: fetch competencies by IDs
+    @Query("select c from Competency c where c.id in :ids")
+    List<Competency> findByIdBatch(@Param("ids") Collection<Long> ids);
 
     long countByClubId(Long clubId);
 
@@ -58,4 +63,6 @@ public interface CompetencyRepository extends JpaRepository<Competency, Long> {
     boolean existsByNameAndClubId(String name, Long clubId);
 
     boolean existsByNameAndClubIdAndIdNot(String name, Long clubId, Long id);
+
+    Optional<Competency> findByNameAndClubId(String name, Long clubId);
 }
