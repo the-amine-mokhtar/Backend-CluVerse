@@ -9,6 +9,7 @@ import com.hexaweb.backendcluverse.entities.finance.Transaction;
 import com.hexaweb.backendcluverse.enumerations.TransactionType;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
+	List<Transaction> findByClubId(Long clubId);
 	List<Transaction> findBySponsorId(Long sponsorId);
 	List<Transaction> findBySponsorIdAndType(Long sponsorId, TransactionType type);
 	List<Transaction> findBySponsorIdAndDateBetween(Long sponsorId, LocalDate startDate, LocalDate endDate);

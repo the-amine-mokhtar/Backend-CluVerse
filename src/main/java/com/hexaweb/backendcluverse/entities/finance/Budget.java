@@ -1,7 +1,5 @@
 package com.hexaweb.backendcluverse.entities.finance;
 
-import java.time.LocalDate;
-
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.event.Event;
 
@@ -29,7 +27,7 @@ public class Budget {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDate year;
+    private Integer year;
     private double totalAllocated;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
