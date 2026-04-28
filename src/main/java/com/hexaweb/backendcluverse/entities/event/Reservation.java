@@ -37,7 +37,7 @@ public class Reservation {
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
-
+    
     private int quantityReserved;
     private String notes;
 

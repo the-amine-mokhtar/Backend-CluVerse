@@ -15,6 +15,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(
         name = "competency_session_participant",
@@ -41,4 +43,10 @@ public class CompetencySessionParticipant {
 
     @Column
     private Boolean attended;
+
+        @Column
+        private LocalDateTime jMinus1ReminderSentAt;
+
+        @Column
+        private LocalDateTime hMinus1ReminderSentAt;
 }

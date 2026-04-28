@@ -57,6 +57,17 @@ public class MaintenancePredictionService {
             fuelLevel, engineCondition, tireCondition,
             brakeCondition, oilLevel, projectedUsagePressure);
 
+        // --- Critical Components Penalty ---
+        // If oil, brakes or engine are critical, risk must be at least 40%
+        if (oilLevel < 40 || brakeCondition < 40 || engineCondition < 40) {
+            risk = Math.max(risk, 45.0);
+        }
+
+        // --- Safety adjustment for fresh vehicles ---
+        if (usage.predictedWeeklyDistanceKm == 0 && usage.predictedWeeklyTransports == 0 && kmSinceService < 100 && oilLevel >= 40) {
+            risk = Math.min(risk, 15.0); 
+        }
+
         String riskLevel = risk < 30 ? "GOOD" : 
                            risk < 65 ? "WARNING" : "CRITICAL";
 
@@ -77,15 +88,23 @@ public class MaintenancePredictionService {
                 + " transports prévus, intégrés dans le score IA.");
         }
 
-        String overallAdvice = buildOverallAdvice(riskLevel, risk);
-        
-        int kmLeft = Math.max(0, 
-            (int)((100 - risk) / 100.0 * 5000));
+        // --- Smart Prediction Logic (Historical based) ---
+        int kmLeft = Math.max(0, (int)((100 - risk) / 100.0 * 5000));
+        int daysUntilFailure = 999; // Default: very far
+        if (usage.predictedWeeklyDistanceKm > 0) {
+            daysUntilFailure = (int) Math.round((kmLeft / usage.predictedWeeklyDistanceKm) * 7);
+        } else if (risk < 30) {
+            daysUntilFailure = 365; // Good state, no usage
+        } else if (risk >= 70) {
+            daysUntilFailure = 3; // Critical state, even without usage
+        }
+
+        String overallAdvice = buildOverallAdvice(riskLevel, risk, daysUntilFailure, usage.predictedMonthlyTransports);
         
         String urgency;
-        if (risk >= 75) urgency = "Intervention immédiate requise";
-        else if (risk >= 50) urgency = "Cette semaine";
-        else if (risk >= 30) urgency = "Ce mois";
+        if (risk >= 75 || daysUntilFailure <= 7) urgency = "Intervention immédiate requise";
+        else if (risk >= 50 || daysUntilFailure <= 14) urgency = "Cette semaine";
+        else if (risk >= 30 || daysUntilFailure <= 30) urgency = "Ce mois";
         else urgency = "Prochain entretien régulier";
 
         MaintenancePredictionResponse response = 
@@ -104,6 +123,12 @@ public class MaintenancePredictionService {
         response.setPredictedWeeklyTransports(usage.predictedWeeklyTransports);
         response.setUsagePressureScore(Math.round(usage.usagePressureScore * 1000.0) / 1000.0);
         response.setFleetUsageRatio(Math.round(usage.fleetUsageRatio * 100.0) / 100.0);
+        
+        // New fields
+        response.setEstimatedDaysUntilFailure(daysUntilFailure);
+        response.setPredictedMonthlyTransports(usage.predictedMonthlyTransports);
+        response.setAvgKmPerTransport(usage.avgKmPerTransport);
+        
         return response;
     }
 
@@ -111,19 +136,25 @@ public class MaintenancePredictionService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startDate = now.minusDays(28);
 
+        List<TransportStatus> activeStatuses = List.of(
+            TransportStatus.COMPLETED, 
+            TransportStatus.PLANNED, 
+            TransportStatus.IN_PROGRESS
+        );
+
         List<Transport> vehicleRecent = transportRepository
-            .findByVehicle_IdAndStatusAndScheduledDateBetween(
+            .findByVehicle_IdAndStatusInAndScheduledDateBetween(
                 vehicleId,
-                TransportStatus.COMPLETED,
+                activeStatuses,
                 startDate,
-                now
+                now.plusDays(7) // On regarde aussi 7 jours dans le futur
             );
 
         List<Transport> fleetRecent = transportRepository
-            .findByStatusAndScheduledDateBetween(
-                TransportStatus.COMPLETED,
+            .findByStatusInAndScheduledDateBetween(
+                activeStatuses,
                 startDate,
-                now
+                now.plusDays(7)
             );
 
         double vehicleDistance = vehicleRecent.stream()
@@ -169,6 +200,8 @@ public class MaintenancePredictionService {
         UsageContext context = new UsageContext();
         context.predictedWeeklyDistanceKm = vehicleKmPerWeek;
         context.predictedWeeklyTransports = Math.max(0, (int) Math.round(vehicleTripsPerWeek));
+        context.predictedMonthlyTransports = vehicleTrips; // Real count from last 28 days
+        context.avgKmPerTransport = vehicleTrips > 0 ? vehicleDistance / vehicleTrips : 0.0;
         context.usagePressureScore = usagePressureScore;
         context.fleetUsageRatio = fleetUsageRatio;
         return context;
@@ -177,6 +210,8 @@ public class MaintenancePredictionService {
     private static class UsageContext {
         private double predictedWeeklyDistanceKm;
         private int predictedWeeklyTransports;
+        private int predictedMonthlyTransports;
+        private double avgKmPerTransport;
         private double usagePressureScore;
         private double fleetUsageRatio;
     }
@@ -240,20 +275,26 @@ public class MaintenancePredictionService {
         return advices;
     }
 
-    private String buildOverallAdvice(String riskLevel, double risk) {
+    private String buildOverallAdvice(String riskLevel, double risk, int daysUntilFailure, int monthlyTransports) {
+        String base;
         switch(riskLevel) {
             case "CRITICAL":
-                return "🚨 Risque de panne élevé (" + 
-                    (int)risk + "%). Ce véhicule nécessite une "
-                    + "intervention immédiate avant tout transport.";
+                base = "🚨 Risque de panne élevé (" + (int)risk + "%).";
+                break;
             case "WARNING":
-                return "⚠️ Attention requise (" + 
-                    (int)risk + "%). Plusieurs points sont à "
-                    + "surveiller. Planifiez un entretien rapidement.";
+                base = "⚠️ Attention requise (" + (int)risk + "%).";
+                break;
             default:
-                return "✅ Véhicule en bon état (" + 
-                    (int)risk + "% de risque). "
-                    + "Continuez l'entretien préventif régulier.";
+                base = "✅ Véhicule en bon état (" + (int)risk + "% de risque).";
+                break;
+        }
+
+        if (monthlyTransports > 0) {
+            String timeMsg = daysUntilFailure > 365 ? "plus d'un an" : daysUntilFailure + " jours";
+            return base + " Basé sur vos " + monthlyTransports + " transports du mois dernier, "
+                 + "une intervention est estimée nécessaire dans environ " + timeMsg + ".";
+        } else {
+            return base + " Aucune activité récente détectée. Continuez l'entretien préventif.";
         }
     }
 }

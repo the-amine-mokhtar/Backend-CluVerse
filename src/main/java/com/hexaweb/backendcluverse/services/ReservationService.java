@@ -19,9 +19,9 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
     private final UserRepository userRepository;
 
     public ReservationService(ReservationRepository repository,
-                              EventRepository eventRepository,
-                              ResourceRepository resourceRepository,
-                              UserRepository userRepository) {
+            EventRepository eventRepository,
+            ResourceRepository resourceRepository,
+            UserRepository userRepository) {
         super(repository);
         this.eventRepository = eventRepository;
         this.resourceRepository = resourceRepository;

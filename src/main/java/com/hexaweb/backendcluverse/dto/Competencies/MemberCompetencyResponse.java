@@ -1,5 +1,6 @@
 package com.hexaweb.backendcluverse.dto.Competencies;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.hexaweb.backendcluverse.enumerations.CompetencyType;
 import com.hexaweb.backendcluverse.enumerations.UpdateSource;
 import lombok.AllArgsConstructor;
@@ -15,54 +16,63 @@ public class MemberCompetencyResponse {
     private Long userId;
     private String userName;
 
-    // Backward-compatible / legacy field names.
-    private Long skillId;
-    private String skillName;
-    private CompetencyType category;
-
-    // Preferred dashboard field names.
+    // Primary field names - backward-compatible via @JsonAlias
+    @JsonAlias({"skillId", "skill_id"})
     private Long competencyId;
+    
+    @JsonAlias({"skillName", "skill_name"})
     private String competencyName;
-    private String competencyCategory;
+    
+    @JsonAlias({"category"})
+    private CompetencyType competencyCategory;
 
     private Integer currentLevel;
     private Integer targetLevel;
     private Integer previousLevel;
     private Integer endorsementCount;
 
-    // Backward-compatible and preferred gap names.
-    private Integer gap;
+    // Primary gap field - backward-compatible via @JsonAlias
+    @JsonAlias({"gap"})
     private Integer gapLevel;
 
     private UpdateSource lastUpdatedBy;
     private LocalDateTime lastUpdated;
+    
+    // Backward-compatible properties for deserialization
+    public void setSkillId(Long skillId) { this.competencyId = skillId; }
+    public Long getSkillId() { return this.competencyId; }
+    
+    public void setSkillName(String skillName) { this.competencyName = skillName; }
+    public String getSkillName() { return this.competencyName; }
+    
+    public void setCategory(CompetencyType category) { this.competencyCategory = category; }
+    public CompetencyType getCategory() { return this.competencyCategory; }
+    
+    public void setGap(Integer gap) { this.gapLevel = gap; }
+    public Integer getGap() { return this.gapLevel; }
 
     public MemberCompetencyResponse(Long id,
                                     Long userId,
-                                    Long skillId,
-                                    String skillName,
-                                    CompetencyType category,
+                                    Long competencyId,
+                                    String competencyName,
+                                    CompetencyType competencyCategory,
                                     Integer currentLevel,
                                     Integer targetLevel,
                                     Integer previousLevel,
                                     Integer endorsementCount,
-                                    Integer gap,
+                                    Integer gapLevel,
                                     UpdateSource lastUpdatedBy,
                                     LocalDateTime lastUpdated) {
         this.id = id;
         this.userId = userId;
-        this.skillId = skillId;
-        this.competencyId = skillId;
-        this.skillName = skillName;
-        this.competencyName = skillName;
-        this.category = category;
-        this.competencyCategory = category == null ? null : category.name();
+        this.competencyId = competencyId;
+        this.competencyName = competencyName;
+        this.competencyCategory = competencyCategory;
         this.currentLevel = currentLevel;
         this.targetLevel = targetLevel;
         this.previousLevel = previousLevel;
         this.endorsementCount = endorsementCount;
-        this.gap = gap;
-        this.gapLevel = gap;
+        this.gapLevel = gapLevel;
         this.lastUpdatedBy = lastUpdatedBy;
         this.lastUpdated = lastUpdated;
     }

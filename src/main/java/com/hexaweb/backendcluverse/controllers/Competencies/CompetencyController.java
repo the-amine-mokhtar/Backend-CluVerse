@@ -1,11 +1,8 @@
 package com.hexaweb.backendcluverse.controllers.Competencies;
 
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyBulkImportResponse;
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyCloneRequest;
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyRequest;
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyResponse;
-import com.hexaweb.backendcluverse.dto.Competencies.CompetencyStatsResponse;
+import com.hexaweb.backendcluverse.dto.Competencies.*;
 import com.hexaweb.backendcluverse.services.competencies.CompetencyService;
+import com.hexaweb.backendcluverse.services.competencies.MemberCompetencyService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -97,4 +94,5 @@ public class CompetencyController {
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, "Super admin access required");
         }
     }
+
 }

@@ -32,7 +32,7 @@ public class ResourceService extends EntityServiceImpl<Resource, Long> {
 
     public Resource createResource(ResourceRequest req) {
         Club club = clubRepository.findById(req.getClubId())
-            .orElseThrow(() -> new RuntimeException("Club not found"));
+                .orElseThrow(() -> new RuntimeException("Club not found"));
         Resource r = new Resource();
         mapRequestToEntity(req, r);
         r.setClub(club);
@@ -43,9 +43,9 @@ public class ResourceService extends EntityServiceImpl<Resource, Long> {
 
     public Resource updateResource(Long id, ResourceRequest req) {
         Resource r = findById(id)
-            .orElseThrow(() -> new RuntimeException("Resource not found"));
+                .orElseThrow(() -> new RuntimeException("Resource not found"));
         Club club = clubRepository.findById(req.getClubId())
-            .orElseThrow(() -> new RuntimeException("Club not found"));
+                .orElseThrow(() -> new RuntimeException("Club not found"));
         mapRequestToEntity(req, r);
         r.setClub(club);
         return save(r);
@@ -73,7 +73,8 @@ public class ResourceService extends EntityServiceImpl<Resource, Long> {
 
     /**
      * Cherche une ressource par son code-barres
-     * Gère les espaces, normalise le code-barres et log les détails pour le debugging
+     * Gère les espaces, normalise le code-barres et log les détails pour le
+     * debugging
      */
     public Resource findByBarcode(String barcode) {
         if (barcode == null || barcode.trim().isEmpty()) {
@@ -83,39 +84,37 @@ public class ResourceService extends EntityServiceImpl<Resource, Long> {
 
         String normalizedBarcode = barcode.trim();
         logger.info("🔍 [findByBarcode] Recherche barcode: '{}' (length={}, bytes={})",
-            normalizedBarcode,
-            normalizedBarcode.length(),
-            byteArrayToHex(normalizedBarcode.getBytes())
-        );
+                normalizedBarcode,
+                normalizedBarcode.length(),
+                byteArrayToHex(normalizedBarcode.getBytes()));
 
         var result = resourceRepository.findByBarcode(normalizedBarcode);
 
         if (result.isPresent()) {
             logger.info("✅ [findByBarcode] Ressource trouvée: id={}, name={}, barcode={}",
-                result.get().getId(),
-                result.get().getName(),
-                result.get().getBarcode()
-            );
+                    result.get().getId(),
+                    result.get().getName(),
+                    result.get().getBarcode());
             return result.get();
         }
 
         // Logging avancé pour debugging
         logger.error("❌ [findByBarcode] Aucune ressource trouvée avec barcode: '{}'", normalizedBarcode);
         logger.error("   Barcode length: {}, Barcode bytes (hex): {}",
-            normalizedBarcode.length(),
-            byteArrayToHex(normalizedBarcode.getBytes())
-        );
+                normalizedBarcode.length(),
+                byteArrayToHex(normalizedBarcode.getBytes()));
 
         throw new ResourceNotFoundException(
-            "Ressource avec le code-barres '" + normalizedBarcode + "' non trouvée. Vérifiez que le code-barres existe en base de données."
-        );
+                "Ressource avec le code-barres '" + normalizedBarcode
+                        + "' non trouvée. Vérifiez que le code-barres existe en base de données.");
     }
 
     /**
      * Utility pour convertir un byte array en hexadécimal pour le debugging
      */
     private String byteArrayToHex(byte[] bytes) {
-        if (bytes == null) return "null";
+        if (bytes == null)
+            return "null";
         StringBuilder result = new StringBuilder();
         for (byte b : bytes) {
             result.append(String.format("%02X ", b));

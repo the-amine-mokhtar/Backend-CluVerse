@@ -8,4 +8,3 @@ public interface BudgetRepository extends JpaRepository<Budget, Long> {
 	boolean existsByEventId(Long eventId);
 	boolean existsByEventIdAndIdNot(Long eventId, Long id);
 }
-

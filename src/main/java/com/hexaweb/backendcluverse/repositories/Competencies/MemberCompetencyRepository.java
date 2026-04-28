@@ -2,11 +2,14 @@ package com.hexaweb.backendcluverse.repositories.Competencies;
 
 import com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyResponse;
 import com.hexaweb.backendcluverse.entities.competencies.MemberCompetency;
+import com.hexaweb.backendcluverse.entities.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface MemberCompetencyRepository extends JpaRepository<MemberCompetency, Long> {
@@ -48,6 +51,24 @@ public interface MemberCompetencyRepository extends JpaRepository<MemberCompeten
             ") from MemberCompetency mc, Competency c " +
             "where mc.skillId = c.id and mc.userId = :userId")
     List<MemberCompetencyResponse> findResponsesByUserId(@Param("userId") Long userId);
+
+    // Batch query optimization: fetch MemberCompetency + User names in one query
+    @Query("""
+            select new com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyResponse(
+                mc.id, mc.userId, mc.skillId, c.name, c.category, 
+                mc.currentLevel, mc.targetLevel, mc.previousLevel, mc.endorsementCount, 
+                (mc.targetLevel - mc.currentLevel), mc.lastUpdatedBy, mc.lastUpdated
+            )
+            from MemberCompetency mc
+            join Competency c on mc.skillId = c.id
+            join User u on mc.userId = u.id
+            where mc.skillId in (select c2.id from Competency c2 where c2.clubId = :clubId)
+    """)
+    List<MemberCompetencyResponse> findEnrichedResponsesByClubId(@Param("clubId") Long clubId);
+
+    // Batch query: fetch MemberCompetency for multiple IDs
+    @Query("select mc from MemberCompetency mc where mc.id in :ids")
+    List<MemberCompetency> findByIdBatch(@Param("ids") Collection<Long> ids);
 
     @Query("select new com.hexaweb.backendcluverse.dto.Competencies.MemberCompetencyResponse(" +
             "mc.id, mc.userId, mc.skillId, c.name, c.category, mc.currentLevel, mc.targetLevel, " +

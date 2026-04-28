@@ -44,10 +44,10 @@ public class Resource {
 
     private String description;
     private double unitCost;
-
+    
     @Enumerated(EnumType.STRING)
     private ResourceStatus status;
-
+    
     private String imageUrl;
     private int quantityTotal;
     private int availableQuantity;
