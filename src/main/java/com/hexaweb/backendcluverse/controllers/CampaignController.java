@@ -5,23 +5,31 @@ import com.hexaweb.backendcluverse.entities.event.Campaign;
 import com.hexaweb.backendcluverse.entities.event.CampaignAccess;
 import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.enumerations.CampaignPermission;
+import com.hexaweb.backendcluverse.enumerations.CampaignStatus;
 import com.hexaweb.backendcluverse.services.CampaignService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/campaigns")
-@RequiredArgsConstructor
 public class CampaignController {
 
     private final CampaignService service;
     private final JwtUtil jwt;
+
+    public CampaignController(CampaignService service, JwtUtil jwt) {
+        this.service = service;
+        this.jwt = jwt;
+    }
+
+    private String resolve(String header) {
+        return jwt.resolveBearerToken(header);
+    }
 
     private Long clubId(String token) {
         return jwt.extractClubId(token);
@@ -31,175 +39,186 @@ public class CampaignController {
         return jwt.extractUserId(token);
     }
 
-   
-
-    private String resolve(String h) {
-        return jwt.resolveBearerToken(h);
+    private boolean admin(String token) {
+        return Boolean.TRUE.equals(jwt.extractIsSuperAdmin(token))
+                || "PRESIDENT".equals(jwt.extractRole(token));
     }
-private boolean admin(String token) {
-    String role = jwt.extractRole(token);
-    return Boolean.TRUE.equals(jwt.extractIsSuperAdmin(token))
-        || "PRESIDENT".equals(role);
-}
-    // ✅ FIX — un seul @GetMapping (suppression du doublon qui causait une erreur de mapping)
-    // Le backend filtre déjà selon visibilité, expiration et droits d'accès
+
     @GetMapping
-    public List<Campaign> all(@RequestHeader("Authorization") String h) {
-        String t = resolve(h);
-        return service.getAllCampaigns(clubId(t), admin(t));
+    public List<Campaign> all(@RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getAllCampaigns(clubId(token), admin(token));
     }
 
     @GetMapping("/{id}")
-public Campaign one(@PathVariable Long id,
-                    @RequestHeader("Authorization") String h) {
-
-    String t = resolve(h);
-    Long uid = userId(t);
-
-    // 🔥 enregistrer la vue sans remplacer la réponse
-    if (uid != null) {
-        service.recordCampaignView(id, uid);
+    public Campaign one(@PathVariable Long id,
+                        @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        Long uid = userId(token);
+        service.getCampaignById(id, clubId(token), admin(token));
+        if (uid != null) {
+            return service.recordCampaignView(id, uid);
+        }
+        return service.getCampaignById(id, clubId(token), admin(token));
     }
-
-    return service.getCampaignById(id, clubId(t), admin(t));
-}
 
     @PostMapping
     public Campaign create(@ModelAttribute CampaignRequest req,
-                           @RequestHeader("Authorization") String h) {
-        String t = resolve(h);
-        return service.createCampaign(req, clubId(t), admin(t));
+                           @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.createCampaign(req, clubId(token), admin(token));
     }
 
     @PutMapping("/{id}")
     public Campaign update(@PathVariable Long id,
                            @ModelAttribute CampaignRequest req,
-                           @RequestHeader("Authorization") String h) {
-        String t = resolve(h);
-        return service.updateCampaign(id, req, clubId(t), admin(t));
+                           @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.updateCampaign(id, req, clubId(token), admin(token));
     }
 
- @DeleteMapping("/{id}")
-public ResponseEntity<Void> delete(@PathVariable Long id,
-                                   @RequestHeader("Authorization") String h) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable Long id,
+                                                      @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
 
-    String t = resolve(h);
+        try {
+            Map<String, Object> result = service.deleteCampaign(id, clubId(token), admin(token));
+            String action = (String) result.get("action");
 
-    try {
-        service.deleteCampaign(id, clubId(t), admin(t));
-        return ResponseEntity.ok().build();
-    } catch (Exception e) {
-        return ResponseEntity.badRequest().build();
+            return switch (action) {
+                case "DELETED", "ARCHIVED" -> ResponseEntity.ok(result);
+                case "LOCKED" -> ResponseEntity.status(423).body(result);
+                default -> ResponseEntity.ok(result);
+            };
+        } catch (RuntimeException e) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("action", "ERROR");
+            err.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(err);
+        }
     }
-}
+
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelCampaign(@PathVariable Long id,
+                                                   @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        try {
+            Campaign result = service.cancelCampaign(id, clubId(token), admin(token));
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            Map<String, Object> err = new HashMap<>();
+            err.put("action", "ERROR");
+            err.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(err);
+        }
+    }
 
     @PostMapping("/{id}/events/{eventId}")
     public Event addEvent(@PathVariable Long id,
                           @PathVariable Long eventId,
-                          @RequestHeader("Authorization") String h) {
-        String t = resolve(h);
-        return service.assignEventToCampaign(id, eventId, clubId(t), admin(t));
+                          @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.assignEventToCampaign(id, eventId, clubId(token), admin(token));
     }
 
     @DeleteMapping("/{id}/events/{eventId}")
     public Event removeEvent(@PathVariable Long id,
                              @PathVariable Long eventId,
-                             @RequestHeader("Authorization") String h) {
-        String t = resolve(h);
-        return service.removeEventFromCampaign(id, eventId, clubId(t), admin(t));
-    }
-        /**
- * Campagnes accessibles pour le club connecté via CampaignAccess.
- * Accessible par tous les rôles (EVENT_MANAGER, PRESIDENT, etc.)
- */
-@GetMapping("/accessible")
-public List<Campaign> accessibleForMyClub(
-        @RequestHeader("Authorization") String h) {
-    String t = resolve(h);
-    return service.getCampaignsSharedWithClub(clubId(t));
-}
-
-/**
- * TOP 5 Campaigns pour dashboard EVENT_MANAGER
- * Inclut : PUBLIC + SHARED avec vous + PRIVATE de votre club
- * Exclus : expirées, CANCELLED, FINISHED
- * Trié par : featured, views, date
- */
-@GetMapping("/top-5")
-public List<Campaign> getTop5Campaigns(
-        @RequestHeader("Authorization") String h) {
-    String t = resolve(h);
-    return service.getTop5CampaignsForEventManager(clubId(t), admin(t));
-}
-
-/**
- * Campaigns pour formulaire création/modification EVENT
- * Même logique que top-5 (sans limite) pour filtrer et afficher en dropdown
- */
-@GetMapping("/for-event-form")
-public List<Campaign> getCampaignsForEventForm(
-        @RequestHeader("Authorization") String h) {
-    String t = resolve(h);
-    return service.getCampaignsForEventForm(clubId(t), admin(t));
-}
-@PostMapping("/{campaignId}/permissions/{clubId}")
-public CampaignAccess grantPermission(
-        @PathVariable Long campaignId,
-        @PathVariable Long clubId,
-        @RequestParam CampaignPermission permission,
-        @RequestHeader("Authorization") String h) {
-
-    String t = resolve(h);
-
-    return service.grantPermission(
-            campaignId,
-            clubId,
-            permission,
-            this.clubId(t),
-            admin(t)
-    );
-}
-@GetMapping("/{campaignId}/permissions")
-public List<CampaignAccess> getPermissions(
-        @PathVariable Long campaignId,
-        @RequestHeader("Authorization") String h) {
-
-    String t = resolve(h);
-
-    return service.getCampaignAccesses(
-            campaignId,
-            clubId(t),
-            admin(t)
-    );
-}
-
-/**
- * DEBUG — Affiche le diagnostic pourquoi rien n'apparaît
- * Montre : total campaigns, total accessible, vos clubs, etc.
- */
-@GetMapping("/debug/status")
-public Map<String, Object> getDebugStatus(
-        @RequestHeader("Authorization") String h) {
-
-    String t = resolve(h);
-
-    if (!admin(t)) {
-        throw new RuntimeException("Unauthorized");
+                             @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.removeEventFromCampaign(id, eventId, clubId(token), admin(token));
     }
 
-    Long cid = clubId(t);
+    @GetMapping("/accessible")
+    public List<Campaign> accessibleForMyClub(@RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getCampaignsSharedWithClub(clubId(token));
+    }
 
-    Map<String, Object> debug = new java.util.HashMap<>();
-    debug.put("yourClubId", cid);
-    debug.put("totalCampaigns", service.getAllCampaigns(cid, admin(t)).size());
-    debug.put("accessibleCampaigns", service.getCampaignsSharedWithClub(cid).size());
-    debug.put("top5Campaigns", service.getTop5CampaignsForEventManager(cid, admin(t)).size());
+    @GetMapping("/top-5")
+    public List<Campaign> getTop5Campaigns(@RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getTop5CampaignsForEventManager(clubId(token), admin(token));
+    }
 
-    return debug;
+    @GetMapping("/for-event-form")
+    public List<Campaign> getCampaignsForEventForm(@RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getCampaignsForEventForm(clubId(token), admin(token));
+    }
+
+    @PostMapping("/{campaignId}/permissions/{clubId}")
+    public CampaignAccess grantPermission(@PathVariable Long campaignId,
+                                          @PathVariable Long clubId,
+                                          @RequestParam CampaignPermission permission,
+                                          @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.grantPermission(campaignId, clubId, permission, this.clubId(token), admin(token));
+    }
+
+    @DeleteMapping("/{campaignId}/permissions/{clubId}")
+    public ResponseEntity<Void> revokePermission(@PathVariable Long campaignId,
+                                                 @PathVariable Long clubId,
+                                                 @RequestParam CampaignPermission permission,
+                                                 @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        service.revokePermission(campaignId, clubId, permission, this.clubId(token), admin(token));
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{campaignId}/permissions")
+    public List<CampaignAccess> getPermissions(@PathVariable Long campaignId,
+                                               @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getCampaignAccesses(campaignId, clubId(token), admin(token));
+    }
+
+    @GetMapping("/{id}/participants")
+    public List<?> participants(@PathVariable Long id,
+                                @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getParticipants(id, clubId(token), admin(token));
+    }
+
+    @GetMapping("/debug/status")
+    public Map<String, Object> getDebugStatus(@RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        if (!admin(token)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        Long cid = clubId(token);
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("yourClubId", cid);
+        debug.put("totalCampaigns", service.getAllCampaigns(cid, admin(token)).size());
+        debug.put("accessibleCampaigns", service.getCampaignsSharedWithClub(cid).size());
+        debug.put("top5Campaigns", service.getTop5CampaignsForEventManager(cid, admin(token)).size());
+        return debug;
+    }
+
+    @PutMapping("/{id}/status")
+    public Campaign updateStatus(@PathVariable Long id,
+                                 @RequestParam CampaignStatus status,
+                                 @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.updateCampaignStatus(id, status, clubId(token), admin(token));
+    }
+
+    @GetMapping("/{id}/events")
+    public List<Event> getCampaignEvents(@PathVariable Long id,
+                                         @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        return service.getCampaignEvents(id, clubId(token), admin(token));
+    }
+
+    @PostMapping("/{id}/views")
+    public Campaign recordView(@PathVariable Long id,
+                               @RequestHeader("Authorization") String header) {
+        String token = resolve(header);
+        Long uid = userId(token);
+        service.getCampaignById(id, clubId(token), admin(token));
+        return service.recordCampaignView(id, uid);
+    }
+
 }
-@GetMapping("/{id}/participants")
-public List<?> participants(@PathVariable Long id,
-                           @RequestHeader("Authorization") String h) {
-    String t = resolve(h);
-    return service.getParticipants(id, clubId(t), admin(t));
-}}

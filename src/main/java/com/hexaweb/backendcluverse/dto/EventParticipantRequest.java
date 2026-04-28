@@ -3,6 +3,8 @@ package com.hexaweb.backendcluverse.dto;
 import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.enumerations.ParticipationStatus;
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -31,8 +33,8 @@ public class EventParticipantRequest {
 
     private Boolean wantsReminder;
 
+    @Enumerated(EnumType.STRING)
     private ParticipationStatus status;
-
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
     private String dietaryRequirements;   // régime alimentaire / besoins spéciaux

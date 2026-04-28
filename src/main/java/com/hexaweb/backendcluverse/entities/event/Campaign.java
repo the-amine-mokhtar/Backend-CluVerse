@@ -6,14 +6,16 @@ import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.enumerations.CampaignStatus;
 import com.hexaweb.backendcluverse.enumerations.CampaignVisibility;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -30,6 +32,7 @@ public class Campaign {
     private String title;
     private String description;
     private Integer views = 0;
+
     @ManyToOne
     private Club ownerClub;
 
@@ -46,52 +49,40 @@ public class Campaign {
     private String targetAudience;
     private Integer maxParticipants;
 
-    private Integer viewsCount = 0;
+    // ✅ Boolean (wrapper) → Lombok génère getFeatured() et non isFeatured()
     private Boolean featured = false;
 
-    // ========= EVENTS =========
+    // ✅ Persisté en base
+    @Column(name = "events_count")
+    private Integer eventsCount = 0;
+
+    // ✅ Persisté en base
+    @Column(name = "total_participants")
+    private Integer totalParticipants = 0;
+
     @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Event> events = new ArrayList<>();
 
-    // ========= ACCESS RIGHTS =========
-    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<CampaignAccess> campaignAccesses = new ArrayList<>();
 
-    // ========= VIEWS (FIX: renamed to avoid conflict) =========
     @OneToMany(mappedBy = "campaign", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<CampaignView> campaignViews = new ArrayList<>();
 
-    // ========= TIMESTAMPS =========
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-    // ========= TRANSIENT FIELDS =========
+    // ✅ Integer (wrapper) → Lombok génère getCurrentParticipants() correctement
     @Transient
     private Integer currentParticipants = 0;
 
+    // ✅ Boolean (wrapper) → Lombok génère getCanAddEvent() et non isCanAddEvent()
     @Transient
-    private boolean canAddEvent = false;
-
-    // ========= DERIVED =========
-    public List<Club> getSharedClubs() {
-        if (campaignAccesses == null) return new ArrayList<>();
-        return campaignAccesses.stream()
-                .map(CampaignAccess::getClub)
-                .collect(Collectors.toList());
-    }
-
-    // ========= GETTER / SETTER =========
-    public boolean isCanAddEvent() {
-        return canAddEvent;
-    }
-
-    public void setCanAddEvent(boolean canAddEvent) {
-        this.canAddEvent = canAddEvent;
-    }
+    private Boolean canAddEvent = false;
 }

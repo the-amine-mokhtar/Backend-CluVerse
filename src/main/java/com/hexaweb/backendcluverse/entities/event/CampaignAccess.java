@@ -1,15 +1,13 @@
 package com.hexaweb.backendcluverse.entities.event;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.enumerations.CampaignPermission;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
-
 @Entity
 @Getter
 @Setter
@@ -21,19 +19,14 @@ public class CampaignAccess {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 🔹 Campaign liée
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "campaign_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Campaign campaign;
 
-    // 🔹 Club autorisé
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Club club;
 
-    // 🔹 Permissions
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "campaign_access_permissions",
@@ -43,24 +36,21 @@ public class CampaignAccess {
     @Enumerated(EnumType.STRING)
     private Set<CampaignPermission> permissions = new HashSet<>();
 
-    // =========================================================
-    // HELPERS
-    // =========================================================
-
-    public boolean hasPermission(CampaignPermission permission) {
-        return permissions != null && permissions.contains(permission);
+    @Transient
+    @JsonProperty("campaignId")
+    public Long getCampaignId() {
+        return campaign != null ? campaign.getId() : null;
     }
 
-    public void addPermission(CampaignPermission permission) {
-        if (permissions == null) {
-            permissions = new HashSet<>();
-        }
-        permissions.add(permission);
+    @Transient
+    @JsonProperty("clubId")
+    public Long getClubId() {
+        return club != null ? club.getId() : null;
     }
 
-    public void removePermission(CampaignPermission permission) {
-        if (permissions != null) {
-            permissions.remove(permission);
-        }
+    @Transient
+    @JsonProperty("clubName")
+    public String getClubName() {
+        return club != null ? club.getName() : null;
     }
 }

@@ -1,8 +1,11 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.dto.EventRequest;
+import com.hexaweb.backendcluverse.dto.EventAiDashboardDto;
+import com.hexaweb.backendcluverse.dto.EventAiSchedulingDto;
 import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.repositories.EventRepository;
+import com.hexaweb.backendcluverse.services.EventAiService;
 import com.hexaweb.backendcluverse.services.EventService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 
@@ -30,6 +33,7 @@ import java.util.Map;
 public class EventController {
 
     private final EventService     eventService;
+    private final EventAiService   eventAiService;
     private final JwtUtil          jwtUtil;
     private final EventRepository  eventRepository;
 
@@ -94,6 +98,18 @@ public class EventController {
         return eventService.findByClubId(clubId);
     }
 
+    @GetMapping("/my-club/ai-dashboard")
+    public EventAiDashboardDto getAiDashboard(@RequestHeader("Authorization") String auth) {
+        Long clubId = extractClubId(auth);
+        return eventAiService.buildOrganizerDashboard(clubId);
+    }
+
+    @GetMapping("/my-club/ai-scheduling")
+    public EventAiSchedulingDto getAiScheduling(@RequestHeader("Authorization") String auth) {
+        Long clubId = extractClubId(auth);
+        return eventAiService.buildOrganizerSchedulingOptimizer(clubId);
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // ═══════════════════════════════════════════════════════════════════════
     // GET ALL (public / admin)
@@ -121,15 +137,22 @@ public class EventController {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // CANCEL
+    // CANCEL (Set status to CANCELLED + notify participants via SMS)
     // ═══════════════════════════════════════════════════════════════════════
 
-    @PostMapping("/cancel/{id}")
-    public void cancel(@PathVariable Long id) {
+    @PostMapping("/{id}/cancel")
+    public Event cancelEvent(@PathVariable Long id,
+                             @RequestHeader("Authorization") String auth) {
+        Long clubId = extractClubId(auth);
         try {
-            eventService.cancelEvent(id);
+            Event cancelled = eventService.cancelEvent(id, clubId);
+            return eventRepository.findByIdWithLocation(cancelled.getId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found after cancellation"));
         } catch (RuntimeException e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+            String msg = e.getMessage() != null ? e.getMessage() : "Unknown error";
+            if (msg.startsWith("Not allowed"))    throw new ResponseStatusException(HttpStatus.FORBIDDEN,  msg);
+            if (msg.startsWith("Event not found")) throw new ResponseStatusException(HttpStatus.NOT_FOUND,  msg);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msg);
         }
     }
 

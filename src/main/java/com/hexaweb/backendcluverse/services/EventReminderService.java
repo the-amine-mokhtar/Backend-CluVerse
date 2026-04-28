@@ -128,11 +128,7 @@ public class EventReminderService {
     }
 
     /**
-     * Normalise le numéro en E.164 pour Twilio.
-     * +21612345678  → déjà valide
-     * 21612345678   → +21612345678
-     * 12345678      → +21612345678  (8 chiffres tunisiens)
-     * 0021612345678 → +21612345678
+
      */
     private String normalizePhone(String raw) {
         if (raw == null) return null;

@@ -16,9 +16,9 @@ public interface CampaignAccessRepository extends JpaRepository<CampaignAccess, 
     @Query("delete from CampaignAccess c where c.campaign.id = :campaignId")
     void deleteAllByCampaignId(@Param("campaignId") Long campaignId);
 
-    List<CampaignAccess> findByCampaignId(Long campaignId);
+    List<CampaignAccess> findByCampaign_Id(Long campaignId);
 
-    Optional<CampaignAccess> findByCampaignIdAndClubId(Long campaignId, Long clubId);
-
-    List<CampaignAccess> findByClubId(Long clubId);
+    Optional<CampaignAccess> findByCampaign_IdAndClub_Id(Long campaignId, Long clubId);
+    
+    List<CampaignAccess> findByClub_Id(Long clubId);
 }

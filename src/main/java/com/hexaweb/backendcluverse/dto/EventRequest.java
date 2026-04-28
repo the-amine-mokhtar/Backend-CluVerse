@@ -2,15 +2,13 @@ package com.hexaweb.backendcluverse.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.hexaweb.backendcluverse.enumerations.EventStatus;
-import com.hexaweb.backendcluverse.enumerations.EventCategory;
+import com.hexaweb.backendcluverse.enumerations.EventType;
 import com.hexaweb.backendcluverse.validators.NoProfanity;
 import com.hexaweb.backendcluverse.validators.ValidEventDates;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -26,7 +24,6 @@ public class EventRequest {
     @NoProfanity
     private String description;
 
-    @NotBlank(message = "Location is required")
     @Size(min = 3, max = 200, message = "Location must be between 3 and 200 characters")
     @NoProfanity
     private String location;
@@ -53,23 +50,15 @@ public class EventRequest {
     // ✅ ENUM propre
     private EventStatus status;
 
+
+
+    @NotNull(message = "Event type is required")
+    private EventType eventType = EventType.OFFLINE;
+
     private String category;
 
-    // 💳 Paiement
-    @NotNull(message = "isPaid must be specified")
-    private Boolean isPaid;
-
-    @DecimalMin(value = "0.0", message = "Price cannot be negative")
-    private Double price;
-
-    // ✅ Validation personnalisée : prix obligatoire si isPaid = true
-    @AssertTrue(message = "Price must be specified and greater than 0 when event is paid")
-    public boolean isPriceValidForPaidEvents() {
-        if (isPaid != null && isPaid) {
-            return price != null && price > 0;
-        }
-        return true; // Si gratuit, prix peut être null
-    }
+    @Size(max = 1000, message = "Meeting URL cannot exceed 1000 characters")
+    private String meetingUrl;
 
     private Boolean reminderSent = false;
 }

@@ -52,18 +52,20 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     Long countByCampaignId(@Param("campaignId") Long campaignId);
 
 
-    @Query("SELECT p FROM EventParticipant p " +
-            "JOIN FETCH p.user u " +
-            "WHERE p.event.id = :eventId " +
-            "AND p.status = :status " +
-            "AND p.wantsReminder = true " +
-            "AND p.reminderSent = false")
+    @Query("""
+        SELECT p FROM EventParticipant p
+        JOIN FETCH p.user u
+        WHERE p.event.id   = :eventId
+          AND p.status      = :status
+          AND p.wantsReminder = true
+          AND p.reminderSent  = false
+          AND p.deletedAt IS NULL
+        """)
     List<EventParticipant> findParticipantsForReminder(
             @Param("eventId") Long eventId,
-            @Param("status") ParticipationStatus status
+            @Param("status")  ParticipationStatus status
     );
 
-    Optional<EventParticipant> findByEventIdAndUserId(Long eventId, Long userId);
     List<EventParticipant> findByEventId(Long eventId);
     long countByEventIdAndStatusNot(Long eventId, ParticipationStatus status);
 
@@ -72,4 +74,22 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
 
     void deleteByEventId(Long eventId);
 
+    @Query("SELECT p FROM EventParticipant p WHERE p.event.id = :eventId AND p.user.id = :userId")
+    Optional<EventParticipant> findByEventIdAndUserId(
+            @Param("eventId") Long eventId,
+            @Param("userId") Long userId
+    );
+
+    // ✅ Pour le scheduler Jitsi: chercher les participants enregistrés
+    @Query("""
+        SELECT p FROM EventParticipant p
+        JOIN FETCH p.user u
+        WHERE p.event.id = :eventId
+        AND p.status = :status
+        ORDER BY p.registrationDate ASC
+    """)
+    List<EventParticipant> findByEventIdAndStatus(
+            @Param("eventId") Long eventId,
+            @Param("status") ParticipationStatus status
+    );
 }

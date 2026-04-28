@@ -1,8 +1,10 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.dto.EventParticipantRequest;
+import com.hexaweb.backendcluverse.dto.ParticipantAiDashboardDto;
 import com.hexaweb.backendcluverse.dto.WaitingListDto;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
+import com.hexaweb.backendcluverse.services.EventAiService;
 import com.hexaweb.backendcluverse.services.EventParticipantService;
 import com.hexaweb.backendcluverse.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class EventParticipantController {
 
     private final EventParticipantService participantService;
+    private final EventAiService          eventAiService;
     private final JwtUtil                 jwtUtil;
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -154,6 +157,15 @@ public class EventParticipantController {
     public List<WaitingListDto> myWaitingList(@RequestHeader("Authorization") String auth) {
         Long userId = resolveUserId(auth);
         return participantService.getWaitingListForUser(userId);
+    }
+
+    @GetMapping("/me/ai-dashboard")
+    public ParticipantAiDashboardDto getParticipantAiDashboard(
+            @RequestHeader("Authorization") String auth) {
+        String token = jwtUtil.resolveBearerToken(auth);
+        Long userId = jwtUtil.extractUserId(token);
+        Long clubId = jwtUtil.extractClubId(token);
+        return eventAiService.buildParticipantDashboard(userId, clubId);
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

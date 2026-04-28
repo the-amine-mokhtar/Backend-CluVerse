@@ -16,17 +16,15 @@ public class CampaignRequest {
     private String title;
     private String description;
     private String targetAudience;
-    
-    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")   // ← accepte "2025-06-01T09:00:00" depuis FormData
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startDate;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime endDate;
+
     private Integer maxParticipants;
     private Boolean featured;
-   private Integer currentParticipants = 0;
     private CampaignVisibility visibility;
-
-    // ⚠️ fichier image upload
     private MultipartFile imageFile;
 }
