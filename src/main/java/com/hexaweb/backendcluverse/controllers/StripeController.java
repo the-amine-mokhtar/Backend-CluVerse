@@ -1,5 +1,9 @@
 package com.hexaweb.backendcluverse.controllers;
 
+import com.hexaweb.backendcluverse.dto.CreateStripePaymentIntentRequest;
+import com.hexaweb.backendcluverse.dto.CreateStripePaymentIntentResponse;
+import com.hexaweb.backendcluverse.dto.StripePublicConfigResponse;
+import com.hexaweb.backendcluverse.services.StripePaymentService;
 import com.stripe.Stripe;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
@@ -24,6 +28,10 @@ public class StripeController {
 
     private final StripePaymentService stripePaymentService;
 
+    public StripeController(StripePaymentService stripePaymentService) {
+        this.stripePaymentService = stripePaymentService;
+    }
+
 
     @Value("${stripe.secret-key}")
     private String stripeSecretKey;
@@ -42,12 +50,6 @@ public class StripeController {
         Stripe.apiKey = stripeSecretKey;
     }
 
-    
-    @GetMapping("/public-config")
-    public StripePublicConfigResponse getPublicConfig() {
-        return stripePaymentService.getPublicConfig();
-    }
-
     @PostMapping("/create-payment-intent")
     public CreateStripePaymentIntentResponse createPaymentIntent(@RequestBody CreateStripePaymentIntentRequest request) {
         return stripePaymentService.createPaymentIntent(request);
@@ -56,30 +58,6 @@ public class StripeController {
     @GetMapping("/public-config")
     public ResponseEntity<Map<String, String>> getPublicConfig() {
         return ResponseEntity.ok(Map.of("publishableKey", stripePublishableKey));
-    }
-
-    @PostMapping("/create-payment-intent")
-    public ResponseEntity<?> createPaymentIntent(@RequestBody CreatePaymentIntentRequest request) {
-        try {
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount((long) request.amountCents())
-                    .setCurrency(request.currency())
-                    .addPaymentMethodType("card")
-                    .putMetadata("sponsorName", request.sponsorName())
-                    .putMetadata("sponsorEmail", request.sponsorEmail())
-                    .putMetadata("sponsorPhone", request.sponsorPhone() != null ? request.sponsorPhone() : "")
-                    .putMetadata("reference", request.reference())
-                    .build();
-
-            PaymentIntent intent = PaymentIntent.create(params);
-            return ResponseEntity.ok(Map.of(
-                    "clientSecret", intent.getClientSecret(),
-                    "paymentIntentId", intent.getId(),
-                    "publishableKey", stripePublishableKey
-            ));
-        } catch (Throwable e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage() != null ? e.getMessage() : e.getClass().getName()));
-        }
     }
 
     @PostMapping("/send-receipt")

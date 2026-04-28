@@ -203,7 +203,7 @@ public class EventParticipantService extends EntityServiceImpl<EventParticipant,
         if (req.getEmail() != null && !req.getEmail().isBlank()) {
             String newEmail = req.getEmail().trim();
             if (!newEmail.equalsIgnoreCase(user.getEmail())) {
-                Optional<User> existingEmail = userRepository.findByEmail(newEmail);
+                Optional<User> existingEmail = userRepository.findFirstByEmailOrderByIdDesc(newEmail);
                 if (existingEmail.isPresent() && !existingEmail.get().getId().equals(user.getId())) {
                     if (strictEmailUpdate) {
                         throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
