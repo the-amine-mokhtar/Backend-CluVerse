@@ -1,9 +1,11 @@
 package com.hexaweb.backendcluverse.controllers;
 
 import com.hexaweb.backendcluverse.entities.logistics.Resource;
+import com.hexaweb.backendcluverse.services.CloudinaryService;
 import com.hexaweb.backendcluverse.services.ResourceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,10 +13,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/resources")
@@ -22,6 +30,23 @@ import java.util.List;
 public class ResourceController {
 
     private final ResourceService resourceService;
+    private final CloudinaryService cloudinaryService;
+
+    // DEBUG ENDPOINT - Liste tous les codes-barres (à supprimer en production)
+    @GetMapping("/debug/barcodes")
+    public ResponseEntity<Map<String, Object>> debugBarcodes() {
+        var barcodes = resourceService.getAllBarcodes();
+        var response = new HashMap<String, Object>();
+        response.put("total", barcodes.size());
+        response.put("barcodes", barcodes);
+        return ResponseEntity.ok(response);
+    }
+
+    // BARCODE SEARCH - Doit être avant /{id} pour éviter les collisions de routes
+    @GetMapping("/barcode/{barcode}")
+    public Resource getByBarcode(@PathVariable String barcode) {
+        return resourceService.findByBarcode(barcode);
+    }
 
     @GetMapping
     public List<Resource> getAll() {
@@ -35,14 +60,19 @@ public class ResourceController {
     }
 
     @PostMapping
-    public Resource create(@RequestBody Resource resource) {
-        return resourceService.save(resource);
+    public Resource create(@RequestBody com.hexaweb.backendcluverse.dto.ResourceRequest request) {
+        return resourceService.createResource(request);
+    }
+
+    @PostMapping("/upload-image")
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) throws IOException {
+        String imageUrl = cloudinaryService.uploadResourceImage(file);
+        return ResponseEntity.ok(imageUrl);
     }
 
     @PutMapping("/{id}")
-    public Resource update(@PathVariable Long id, @RequestBody Resource resource) {
-        resource.setId(id);
-        return resourceService.save(resource);
+    public Resource update(@PathVariable Long id, @RequestBody com.hexaweb.backendcluverse.dto.ResourceRequest request) {
+        return resourceService.updateResource(id, request);
     }
 
     @DeleteMapping("/{id}")

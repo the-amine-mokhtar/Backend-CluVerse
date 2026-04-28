@@ -1,6 +1,5 @@
 package com.hexaweb.backendcluverse.entities.recrutement;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import jakarta.persistence.*;
@@ -18,7 +17,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +26,6 @@ public class Application {
     private String candidateName;
     private String candidateEmail;
     private String candidatePhone;
-
 
     private String motivationLetter;
 
@@ -43,8 +41,8 @@ public class Application {
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ApplicationAnswer> answers = new ArrayList<>();
 
-    @JsonIgnore
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("application")
     private List<InterviewConfig> interviewConfigs = new ArrayList<>();
 
 }

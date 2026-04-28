@@ -136,7 +136,7 @@ public class ClubController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         if (membershipRepository.existsByClubIdAndUserId(clubId,
-                userRepository.findByEmail(request.getEmail())
+                userRepository.findFirstByEmailOrderByIdDesc(request.getEmail())
                         .map(User::getId).orElse(-1L))) {
             return ResponseEntity.badRequest().body("User is already a member of this club");
         }

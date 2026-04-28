@@ -56,7 +56,7 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
 
         boolean existsActive = electionRepository.existsByPositionIdAndStatusIn(
                 req.getPositionId(),
-                Arrays.asList(ElectionStatus.DRAFT, ElectionStatus.OPEN)
+                List.of(ElectionStatus.DRAFT, ElectionStatus.OPEN)
         );
         if (existsActive) {
             throw new RuntimeException("This position already has an active or draft election ongoing");

@@ -13,7 +13,6 @@ import com.hexaweb.backendcluverse.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -40,7 +39,7 @@ public class CandidateService extends EntityServiceImpl<Candidate, Long> {
     public Candidate submitCandidacy(CandidateRequest req, Long userId) {
         boolean alreadyApplied = candidateRepository.existsByUserIdAndElectionIdAndStatusIn(
                 userId, req.getElectionId(),
-                Arrays.asList(CandidateStatus.PENDING, CandidateStatus.APPROVED)
+                List.of(CandidateStatus.PENDING, CandidateStatus.APPROVED)
         );
         if (alreadyApplied) {
             throw new RuntimeException("You already have a pending or approved candidacy for this election");

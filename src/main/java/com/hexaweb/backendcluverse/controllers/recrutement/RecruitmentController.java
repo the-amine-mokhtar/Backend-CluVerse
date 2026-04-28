@@ -91,7 +91,6 @@ public class RecruitmentController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND)));
     }
 
-
     @DeleteMapping("/campaigns/{id}")
     public ResponseEntity<String> deleteCampaign(@PathVariable Long id) {
         campaignRepository.deleteById(id);
@@ -100,7 +99,7 @@ public class RecruitmentController {
 
     @PostMapping("/campaigns/{id}/questions")
     public ResponseEntity<CampaignQuestion> addQuestion(@PathVariable Long id,
-                                                        @RequestBody CampaignQuestion question) {
+            @RequestBody CampaignQuestion question) {
         RecruitmentCampaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -110,15 +109,19 @@ public class RecruitmentController {
 
     @PutMapping("/questions/{id}")
     public ResponseEntity<CampaignQuestion> updateQuestion(@PathVariable Long id,
-                                                           @RequestBody CampaignQuestion updated) {
+            @RequestBody CampaignQuestion updated) {
         CampaignQuestion question = questionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (updated.getLabel() != null) question.setLabel(updated.getLabel());
-        if (updated.getType() != null) question.setType(updated.getType());
-        if (updated.getOptions() != null) question.setOptions(updated.getOptions());
+        if (updated.getLabel() != null)
+            question.setLabel(updated.getLabel());
+        if (updated.getType() != null)
+            question.setType(updated.getType());
+        if (updated.getOptions() != null)
+            question.setOptions(updated.getOptions());
         question.setRequired(updated.isRequired());
-        if (updated.getOrderIndex() != null) question.setOrderIndex(updated.getOrderIndex());
+        if (updated.getOrderIndex() != null)
+            question.setOrderIndex(updated.getOrderIndex());
 
         return ResponseEntity.ok(questionRepository.save(question));
     }
@@ -137,7 +140,7 @@ public class RecruitmentController {
 
     @PostMapping("/campaigns/{id}/apply")
     public ResponseEntity<?> apply(@PathVariable Long id,
-                                   @RequestBody ApplicationSubmissionDto submission) {
+            @RequestBody ApplicationSubmissionDto submission) {
         RecruitmentCampaign campaign = campaignRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -179,7 +182,8 @@ public class RecruitmentController {
         }
         Notification notification = new Notification();
         notification.setClubId(campaign.getClub().getId());
-        notification.setMessage("Nouvelle candidature de " + submission.getCandidateName() + " pour \"" + campaign.getTitle() + "\"");
+        notification.setMessage(
+                "Nouvelle candidature de " + submission.getCandidateName() + " pour \"" + campaign.getTitle() + "\"");
         notification.setApplicationId(application.getId());
         notification.setCandidateName(submission.getCandidateName());
         notification.setCampaignTitle(campaign.getTitle());
@@ -223,7 +227,8 @@ public class RecruitmentController {
             case INTERVIEW:
                 subject = "Vous êtes sélectionné(e) pour un entretien";
                 message = "Bonjour " + application.getCandidateName() + ",\n\n"
-                        + "Félicitations ! Votre candidature pour la campagne \"" + campaignTitle + "\" du club " + clubName
+                        + "Félicitations ! Votre candidature pour la campagne \"" + campaignTitle + "\" du club "
+                        + clubName
                         + " a été retenue pour un entretien.\n\n"
                         + "Notre équipe vous contactera prochainement pour convenir d'une date.";
                 break;
@@ -272,10 +277,14 @@ public class RecruitmentController {
 
         Map<String, Long> byStatus = new LinkedHashMap<>();
         byStatus.put("NEW", applications.stream().filter(a -> a.getStatus() == ApplicationStatus.NEW).count());
-        byStatus.put("REVIEWING", applications.stream().filter(a -> a.getStatus() == ApplicationStatus.REVIEWING).count());
-        byStatus.put("INTERVIEW", applications.stream().filter(a -> a.getStatus() == ApplicationStatus.INTERVIEW).count());
-        byStatus.put("ACCEPTED", applications.stream().filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).count());
-        byStatus.put("REJECTED", applications.stream().filter(a -> a.getStatus() == ApplicationStatus.REJECTED).count());
+        byStatus.put("REVIEWING",
+                applications.stream().filter(a -> a.getStatus() == ApplicationStatus.REVIEWING).count());
+        byStatus.put("INTERVIEW",
+                applications.stream().filter(a -> a.getStatus() == ApplicationStatus.INTERVIEW).count());
+        byStatus.put("ACCEPTED",
+                applications.stream().filter(a -> a.getStatus() == ApplicationStatus.ACCEPTED).count());
+        byStatus.put("REJECTED",
+                applications.stream().filter(a -> a.getStatus() == ApplicationStatus.REJECTED).count());
 
         double conversionRate = total > 0
                 ? Math.round((byStatus.get("ACCEPTED") * 100.0 / total) * 10.0) / 10.0
@@ -347,15 +356,14 @@ public class RecruitmentController {
         String clubName = campaign.getClub().getName();
         String clubDescription = campaign.getClub().getDescription();
         String campaignTitle = campaign.getTitle();
-        int questionCount = body.get("questionCount") != null ?
-                Integer.parseInt(body.get("questionCount").toString()) : 5;
-        List<String> themes = body.get("themes") != null ?
-                (List<String>) body.get("themes") : List.of("motivation", "disponibilité");
+        int questionCount = body.get("questionCount") != null ? Integer.parseInt(body.get("questionCount").toString())
+                : 5;
+        List<String> themes = body.get("themes") != null ? (List<String>) body.get("themes")
+                : List.of("motivation", "disponibilité");
         String additionalInstructions = (String) body.getOrDefault("additionalInstructions", "");
 
         List<Map<String, Object>> questions = questionGeneratorService.generateQuestions(
-                clubName, clubDescription, campaignTitle, questionCount, themes, additionalInstructions
-        );
+                clubName, clubDescription, campaignTitle, questionCount, themes, additionalInstructions);
 
         return ResponseEntity.ok(questions);
     }
