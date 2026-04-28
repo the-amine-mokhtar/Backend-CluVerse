@@ -35,4 +35,8 @@ public class Sponsor {
     @OneToMany(mappedBy = "sponsor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Sponsorship> sponsorships = new ArrayList<>();
+
+    @OneToMany(mappedBy = "sponsor", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Transaction> transactions = new ArrayList<>();
 }

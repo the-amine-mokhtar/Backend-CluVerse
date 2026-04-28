@@ -1,6 +1,7 @@
 package com.hexaweb.backendcluverse.entities.finance;
 
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
 import com.hexaweb.backendcluverse.enumerations.TransactionType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,5 +39,10 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
     private Club club;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sponsor_id")
+    private Sponsor sponsor;
 }
 
