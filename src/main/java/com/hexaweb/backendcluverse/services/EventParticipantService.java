@@ -34,13 +34,13 @@ public class EventParticipantService extends EntityServiceImpl<EventParticipant,
     private final EventService               eventService;
     private final SmsService                 smsService;
     private final EventWaitingListRepository waitingListRepository;
-    
+
     @Autowired
     private JavaMailSender mailSender;
-    
+
     @Value("${app.base-url}")
     private String baseUrl;
-    
+
     @Value("${spring.mail.username}")
     private String fromAddress;
 
@@ -512,34 +512,34 @@ public class EventParticipantService extends EntityServiceImpl<EventParticipant,
                 log.warn("[EMAIL] Email vide pour user {} — email non envoyé", user.getId());
                 return;
             }
-            
+
             String subject = "✅ Inscription confirmée — " + event.getTitle();
             String body = buildConfirmationEmailBody(user, event);
-            
+
             SimpleMailMessage mail = new SimpleMailMessage();
             mail.setFrom(fromAddress);
             mail.setTo(user.getEmail());
             mail.setSubject(subject);
             mail.setText(body);
-            
+
             mailSender.send(mail);
-            log.info("[EMAIL] ✅ Email de confirmation envoyé à {} pour l'événement {}", 
+            log.info("[EMAIL] ✅ Email de confirmation envoyé à {} pour l'événement {}",
                     user.getEmail(), event.getId());
         } catch (Exception e) {
-            log.error("[EMAIL] ❌ Erreur lors de l'envoi d'email à {} — {}", 
+            log.error("[EMAIL] ❌ Erreur lors de l'envoi d'email à {} — {}",
                     user.getEmail(), e.getMessage(), e);
         }
     }
 
     private String buildConfirmationEmailBody(User user, Event event) {
         StringBuilder body = new StringBuilder();
-        
+
         body.append("Bonjour ").append(user.getFirstName()).append(",\n\n");
         body.append("✅ Votre inscription est confirmée !\n\n");
         body.append("══════════════════════════════════════\n");
         body.append("Événement: ").append(event.getTitle()).append("\n");
         body.append("Date: ").append(event.getStartDate()).append("\n");
-        
+
         // Si événement ONLINE avec meeting URL
         if (event.isOnline() && event.getMeetingUrl() != null && !event.getMeetingUrl().isEmpty()) {
             body.append("Type: 🎥 ONLINE\n");
@@ -553,13 +553,13 @@ public class EventParticipantService extends EntityServiceImpl<EventParticipant,
                 body.append("Lieu: ").append(locationName).append("\n");
             }
         }
-        
+
         body.append("══════════════════════════════════════\n\n");
         body.append("ℹ️ Consultez votre profil Cluverse pour voir tous les détails:\n");
         body.append(baseUrl).append("/events/").append(event.getId()).append("\n\n");
         body.append("À bientôt,\n");
         body.append("L'équipe Cluverse 🎉");
-        
+
         return body.toString();
     }
 }

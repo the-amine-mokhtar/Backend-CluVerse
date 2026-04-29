@@ -6,6 +6,7 @@ import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.event.Reservation;
 import com.hexaweb.backendcluverse.enumerations.ResourceStatus;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -37,6 +38,10 @@ public class Resource {
     private Long id;
 
     private String name;
+
+    @Column(unique = true, nullable = false)
+    private String barcode;
+
     private String description;
     private double unitCost;
     

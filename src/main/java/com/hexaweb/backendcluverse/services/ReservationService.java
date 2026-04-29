@@ -21,7 +21,7 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
     private final UserRepository userRepository;
     private final ReservationRepository reservationRepository;
 
-    public ReservationService(ReservationRepository repository, 
+    public ReservationService(ReservationRepository repository,
                               EventRepository eventRepository,
                               ResourceRepository resourceRepository,
                               UserRepository userRepository) {
@@ -34,56 +34,56 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
 
     public Reservation createReservation(ReservationRequest req) {
         Event e = eventRepository.findById(req.getEventId())
-            .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException("Event not found"));
         Resource r = resourceRepository.findById(req.getResourceId())
-            .orElseThrow(() -> new RuntimeException("Resource not found"));
+                .orElseThrow(() -> new RuntimeException("Resource not found"));
         User u = userRepository.findById(req.getUserId())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         if (r.getAvailableQuantity() < req.getQuantityReserved()) {
             throw new RuntimeException("Insufficient quantity available. Available: " + r.getAvailableQuantity());
         }
-        
+
         Reservation res = new Reservation();
         mapRequestToEntity(req, res);
         res.setEvent(e);
         res.setResource(r);
         res.setUser(u);
-        
+
         // Update available quantity
         r.setAvailableQuantity(r.getAvailableQuantity() - req.getQuantityReserved());
         resourceRepository.save(r);
-        
+
         return save(res);
     }
 
     public Reservation updateReservation(Long id, ReservationRequest req) {
         Reservation res = findById(id)
-            .orElseThrow(() -> new RuntimeException("Reservation not found"));
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
         Event e = eventRepository.findById(req.getEventId())
-            .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException("Event not found"));
         Resource r = resourceRepository.findById(req.getResourceId())
-            .orElseThrow(() -> new RuntimeException("Resource not found"));
+                .orElseThrow(() -> new RuntimeException("Resource not found"));
         User u = userRepository.findById(req.getUserId())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
         int oldQuantity = res.getQuantityReserved();
         int newQuantity = req.getQuantityReserved();
         int difference = newQuantity - oldQuantity;
-        
+
         if (r.getAvailableQuantity() < difference) {
             throw new RuntimeException("Insufficient quantity available. Available: " + r.getAvailableQuantity());
         }
-        
+
         mapRequestToEntity(req, res);
         res.setEvent(e);
         res.setResource(r);
         res.setUser(u);
-        
+
         // Update available quantity
         r.setAvailableQuantity(r.getAvailableQuantity() - difference);
         resourceRepository.save(r);
-        
+
         return save(res);
     }
 
@@ -102,7 +102,7 @@ public class ReservationService extends EntityServiceImpl<Reservation, Long> {
     @Override
     public void deleteById(Long id) {
         Reservation reservation = findById(id)
-            .orElseThrow(() -> new RuntimeException("Reservation not found"));
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
 
         Resource resource = reservation.getResource();
         if (resource != null) {

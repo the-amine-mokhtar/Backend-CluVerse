@@ -1,6 +1,6 @@
 package com.hexaweb.backendcluverse.repositories;
 
-import com.hexaweb.backendcluverse.entities.recruitement.Application;
+import com.hexaweb.backendcluverse.entities.recrutement.Application;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -14,4 +14,3 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     long countByRecruitmentCampaignId(Long campaignId);
 
 }
-

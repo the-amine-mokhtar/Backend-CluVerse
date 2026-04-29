@@ -37,6 +37,8 @@ public class InventoryTransaction {
     private LocalDateTime date;
     private String reason;
 
+    private boolean applied = false;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "resource_id", nullable = false)
     @JsonIgnore

@@ -1,0 +1,39 @@
+{
+  "bias": 75.95762711864406,
+  "weights": [
+    -16.73034478659077,
+    4.43838917854271e-14,
+    -7.678087531746179,
+    9.65487702533544,
+    3.916327091648435,
+    3.9163270916484363
+  ],
+  "feature_means": [
+    12.169491525423728,
+    1.0,
+    0.17796610169491525,
+    0.2542372881355932,
+    0.18220338983050846,
+    0.18220338983050846
+  ],
+  "feature_stds": [
+    4.931402472781574,
+    1e-08,
+    0.3824842166575172,
+    0.4354316228361061,
+    0.38601207530985565,
+    0.38601207530985565
+  ],
+  "features": [
+    "dep_hour",
+    "is_weekend",
+    "is_peak_morning",
+    "is_peak_evening",
+    "is_lunch",
+    "is_friday_lunch"
+  ],
+  "training_samples": 236,
+  "model_type": "LINEAR_REGRESSION",
+  "dataset": "GTFS Tunisia UABS Banlieue",
+  "description": "Predicts transport duration in minutes"
+}

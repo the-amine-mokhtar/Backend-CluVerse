@@ -1,0 +1,4 @@
+"agency_id","agency_name","agency_url","agency_timezone","agency_lang","agency_phone","agency_fare_url","agency_email"
+"1740-1","Uabs-Banlieue Sahel","http://www.sncft.com.tn","Africa/Tunis","ar","(+216)71334444 4438","",""
+"1740-2","Uabt-Banlieue Tunis","http://www.sncft.com.tn","Africa/Tunis","ar","(+216)71334444 4438","",""
+"1740-3","Uagl-Grande Ligne","http://www.sncft.com.tn","Africa/Tunis","ar","(+216)71334444 4438","",""
