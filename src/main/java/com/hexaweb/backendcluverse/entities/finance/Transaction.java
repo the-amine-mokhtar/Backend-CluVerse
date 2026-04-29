@@ -4,8 +4,9 @@ import java.time.LocalDate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hexaweb.backendcluverse.entities.Club;
+import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
-import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
+import com.hexaweb.backendcluverse.enumerations.TransactionScope;
 import com.hexaweb.backendcluverse.enumerations.TransactionType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,11 +41,13 @@ public class Transaction {
     @Enumerated(EnumType.STRING)
     private TransactionType type;
 
+    @Enumerated(EnumType.STRING)
+    private TransactionScope scope;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Club club;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sponsor_id")
@@ -52,8 +55,11 @@ public class Transaction {
     private Sponsor sponsor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sponsorship_id")
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private Sponsorship sponsorship;
+    @JoinColumn(name = "event_id")
+    private Event event;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "budget_id")
+    private Budget budget;
 }
 
