@@ -2,13 +2,13 @@ package com.hexaweb.backendcluverse.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.hexaweb.backendcluverse.enumerations.EventStatus;
-import com.hexaweb.backendcluverse.enumerations.EventCategory;
+import com.hexaweb.backendcluverse.enumerations.EventType;
 import com.hexaweb.backendcluverse.validators.NoProfanity;
 import com.hexaweb.backendcluverse.validators.ValidEventDates;
+
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,9 +24,12 @@ public class EventRequest {
     @NoProfanity
     private String description;
 
-    @NotBlank(message = "Location is required")
+    @Size(min = 3, max = 200, message = "Location must be between 3 and 200 characters")
     @NoProfanity
     private String location;
+
+    private String latitude;
+    private String longitude;
 
     private String imageUrl;
 
@@ -47,31 +50,15 @@ public class EventRequest {
     // ✅ ENUM propre
     private EventStatus status;
 
-    // ✅ NOUVEAU : Category
-    private EventCategory category;
 
-    // 💳 Paiement
-    @NotNull(message = "isPaid must be specified")
-    private Boolean isPaid;
 
-    @DecimalMin(value = "0.0", message = "Price cannot be negative")
-    private Double price;
+    @NotNull(message = "Event type is required")
+    private EventType eventType = EventType.OFFLINE;
 
-    // Coordonnées GPS
-    @DecimalMin(value = "-90.0", message = "Latitude must be between -90 and 90")
-    @DecimalMax(value = "90.0", message = "Latitude must be between -90 and 90")
-    private Double latitude;
+    private String category;
 
-    @DecimalMin(value = "-180.0", message = "Longitude must be between -180 and 180")
-    @DecimalMax(value = "180.0", message = "Longitude must be between -180 and 180")
-    private Double longitude;
+    @Size(max = 1000, message = "Meeting URL cannot exceed 1000 characters")
+    private String meetingUrl;
 
-    // ✅ Validation personnalisée : prix obligatoire si isPaid = true
-    @AssertTrue(message = "Price must be specified and greater than 0 when event is paid")
-    public boolean isPriceValidForPaidEvents() {
-        if (isPaid != null && isPaid) {
-            return price != null && price > 0;
-        }
-        return true; // Si gratuit, prix peut être null
-    }
+    private Boolean reminderSent = false;
 }

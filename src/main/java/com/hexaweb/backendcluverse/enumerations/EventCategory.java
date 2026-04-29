@@ -6,5 +6,11 @@ public enum EventCategory {
     MEETING,
     TRAINING,
     HACKATHON,
-    SOCIAL
+    SOCIAL,
+    SEMINAR,
+    NETWORKING,
+    COMPETITION,
+    OTHER,
+    WEBINAR, // Example of a missing value
+    FESTIVAL // Example of another missing value
 }

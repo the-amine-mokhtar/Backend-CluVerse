@@ -2,6 +2,7 @@ package com.hexaweb.backendcluverse.entities.event;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hexaweb.backendcluverse.entities.User;
 import com.hexaweb.backendcluverse.entities.logistics.Resource;
 import com.hexaweb.backendcluverse.enumerations.ReservationStatus;
@@ -55,4 +56,14 @@ public class Reservation {
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
     private User user;
+
+    @JsonProperty("resourceId")
+    public Long getResourceId() {
+        return resource != null ? resource.getId() : null;
+    }
+
+    @JsonProperty("resourceName")
+    public String getResourceName() {
+        return resource != null ? resource.getName() : null;
+    }
 }

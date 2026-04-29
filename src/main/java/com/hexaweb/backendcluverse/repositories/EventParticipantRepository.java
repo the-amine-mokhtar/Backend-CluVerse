@@ -10,15 +10,86 @@ import java.util.List;
 import java.util.Optional;
 
 public interface EventParticipantRepository extends JpaRepository<EventParticipant, Long> {
+
+
+    @Query("""
+        SELECT p FROM EventParticipant p
+        JOIN FETCH p.user u
+        WHERE p.user.id = :userId
+    """)
+    List<EventParticipant> findByUserId(@Param("userId") Long userId);
+
+
+    List<EventParticipant> findByEventIdAndStatusNot(Long eventId, ParticipationStatus status);
+
+    @Query("SELECT ep FROM EventParticipant ep WHERE ep.event.campaign.id = :campaignId")
+    List<EventParticipant> findByCampaignId(Long campaignId);
+
+    @Query("""
+        SELECT COUNT(p) FROM EventParticipant p
+        JOIN p.event e
+        WHERE e.campaign.id = :campaignId
+        AND p.status <> 'CANCELLED'
+    """)
+    long countParticipantsByCampaign(@Param("campaignId") Long campaignId);
+
+
+
+
+    @Query("""
+        SELECT COUNT(p)
+        FROM EventParticipant p
+        WHERE p.event.campaign.id = :campaignId
+        AND p.status <> com.hexaweb.backendcluverse.enumerations.ParticipationStatus.CANCELLED
+    """)
+    Long countParticipantsByCampaignId(@Param("campaignId") Long campaignId);
+
+    @Query("""
+        SELECT COUNT(p)
+        FROM EventParticipant p
+        WHERE p.event.campaign.id = :campaignId
+    """)
+    Long countByCampaignId(@Param("campaignId") Long campaignId);
+
+
+    @Query("""
+        SELECT p FROM EventParticipant p
+        JOIN FETCH p.user u
+        WHERE p.event.id   = :eventId
+          AND p.status      = :status
+          AND p.wantsReminder = true
+          AND p.reminderSent  = false
+          AND p.deletedAt IS NULL
+        """)
+    List<EventParticipant> findParticipantsForReminder(
+            @Param("eventId") Long eventId,
+            @Param("status")  ParticipationStatus status
+    );
+
     List<EventParticipant> findByEventId(Long eventId);
-    boolean existsByEventIdAndUserId(Long eventId, Long userId);
-    List<EventParticipant> findByUserId(Long userId);
-    Optional<EventParticipant> findByEventIdAndUserId(Long eventId, Long userId);
     long countByEventIdAndStatusNot(Long eventId, ParticipationStatus status);
+
     @Query("SELECT p FROM EventParticipant p JOIN FETCH p.event WHERE p.user.id = :userId")
-    List<EventParticipant> findByUserIdWithEvent(Long userId);
-    @Query("SELECT COUNT(p) FROM EventParticipant p WHERE p.event.id = :eventId AND p.status != 'CANCELLED'")
-    int countByEventIdAndStatusNotCancelled(@Param("eventId") Long eventId);
+    List<EventParticipant> findByUserIdWithEvent(@Param("userId") Long userId);
 
+    void deleteByEventId(Long eventId);
+
+    @Query("SELECT p FROM EventParticipant p WHERE p.event.id = :eventId AND p.user.id = :userId")
+    Optional<EventParticipant> findByEventIdAndUserId(
+            @Param("eventId") Long eventId,
+            @Param("userId") Long userId
+    );
+
+    // ✅ Pour le scheduler Jitsi: chercher les participants enregistrés
+    @Query("""
+        SELECT p FROM EventParticipant p
+        JOIN FETCH p.user u
+        WHERE p.event.id = :eventId
+        AND p.status = :status
+        ORDER BY p.registrationDate ASC
+    """)
+    List<EventParticipant> findByEventIdAndStatus(
+            @Param("eventId") Long eventId,
+            @Param("status") ParticipationStatus status
+    );
 }
-
