@@ -1,5 +1,8 @@
 package com.hexaweb.backendcluverse.entities.finance;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
@@ -43,10 +46,12 @@ public class Transaction {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "club_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Club club;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sponsor_id")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Sponsor sponsor;
 
     @ManyToOne(fetch = FetchType.LAZY)

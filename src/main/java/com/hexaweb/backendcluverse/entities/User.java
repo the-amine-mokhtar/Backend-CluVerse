@@ -6,6 +6,7 @@ import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.entities.event.EventParticipant;
 import com.hexaweb.backendcluverse.entities.event.Reservation;
 import com.hexaweb.backendcluverse.entities.logistics.Transport;
+import jakarta.persistence.*;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -52,7 +53,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Candidate> candidates = new ArrayList<>();
-
+    @ManyToOne
+    @JoinColumn(name = "club_id")
+    private Club club;
     @OneToMany(mappedBy = "voter", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Vote> votes = new ArrayList<>();

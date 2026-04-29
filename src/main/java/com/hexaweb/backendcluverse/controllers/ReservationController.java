@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -24,7 +25,10 @@ public class ReservationController {
     private final ReservationService reservationService;
 
     @GetMapping
-    public List<Reservation> getAll() {
+    public List<Reservation> getAll(@RequestParam(required = false) Long eventId) {
+        if (eventId != null) {
+            return reservationService.findByEventId(eventId);
+        }
         return reservationService.findAll();
     }
 
@@ -49,4 +53,4 @@ public class ReservationController {
         reservationService.deleteById(id);
     }
 }
-
+    
