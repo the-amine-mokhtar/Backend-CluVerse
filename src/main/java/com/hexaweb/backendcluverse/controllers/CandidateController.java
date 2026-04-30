@@ -96,6 +96,7 @@ public class CandidateController {
                 candidate.getBio(),
                 candidate.getUser() != null ? candidate.getUser().getFirstName() + " " + candidate.getUser().getLastName() : null,
                 candidate.getUser() != null ? candidate.getUser().getEmail() : null,
+                candidate.getUser() != null ? candidate.getUser().getId() : null,
                 candidate.getElection() != null ? candidate.getElection().getId() : null,
                 candidate.getPosition() != null ? candidate.getPosition().getId() : null,
                 voteCount,

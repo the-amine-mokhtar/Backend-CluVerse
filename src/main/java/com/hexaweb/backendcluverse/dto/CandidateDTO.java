@@ -21,6 +21,7 @@ public class CandidateDTO {
 
     private String userName;
     private String userEmail;
+    private Long userId;
     private Long electionId;
     private Long positionId;
 
