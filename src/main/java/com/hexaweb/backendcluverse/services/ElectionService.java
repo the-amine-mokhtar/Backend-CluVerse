@@ -10,6 +10,7 @@ import com.hexaweb.backendcluverse.enumerations.ElectionStatus;
 import com.hexaweb.backendcluverse.entities.election.Position;
 import com.hexaweb.backendcluverse.entities.election.Vote;
 import com.hexaweb.backendcluverse.repositories.CandidateRepository;
+import com.hexaweb.backendcluverse.repositories.Competencies.CompetencyRepository;
 import com.hexaweb.backendcluverse.repositories.ElectionRepository;
 import com.hexaweb.backendcluverse.repositories.PositionRepository;
 import com.hexaweb.backendcluverse.repositories.VoteRepository;
@@ -28,18 +29,21 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
     private final PositionRepository positionRepository;
     private final CandidateRepository candidateRepository;
     private final VoteRepository voteRepository;
+    private final CompetencyRepository competencyRepository;
 
     public ElectionService(
             ElectionRepository repository,
             PositionRepository positionRepository,
             CandidateRepository candidateRepository,
-            VoteRepository voteRepository
+            VoteRepository voteRepository,
+            CompetencyRepository competencyRepository
     ) {
         super(repository);
         this.electionRepository = repository;
         this.positionRepository = positionRepository;
         this.candidateRepository = candidateRepository;
         this.voteRepository = voteRepository;
+        this.competencyRepository = competencyRepository;
     }
 
     public List<Election> findByClubId(Long clubId) {
@@ -70,6 +74,10 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
         election.setStatus(req.getStatus());
         election.setPosition(position);
 
+        if (req.getCompetencyIds() != null && !req.getCompetencyIds().isEmpty()) {
+            election.setRequiredCompetencies(competencyRepository.findAllById(req.getCompetencyIds()));
+        }
+
         Election saved = electionRepository.save(election);
         electionRepository.flush();
         return saved;
@@ -84,6 +92,10 @@ public class ElectionService extends EntityServiceImpl<Election, Long> {
         if (req.getStartDate() != null) election.setStartDate(req.getStartDate());
         if (req.getEndDate() != null) election.setEndDate(req.getEndDate());
         if (req.getStatus() != null) election.setStatus(req.getStatus());
+
+        if (req.getCompetencyIds() != null) {
+            election.setRequiredCompetencies(competencyRepository.findAllById(req.getCompetencyIds()));
+        }
 
         Election saved = electionRepository.save(election);
         electionRepository.flush();
