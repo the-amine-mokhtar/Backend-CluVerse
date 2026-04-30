@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hexaweb.backendcluverse.entities.Club;
 import com.hexaweb.backendcluverse.entities.event.Event;
 import com.hexaweb.backendcluverse.entities.sponsoring.Sponsor;
+import com.hexaweb.backendcluverse.entities.sponsoring.Sponsorship;
 import com.hexaweb.backendcluverse.enumerations.TransactionScope;
 import com.hexaweb.backendcluverse.enumerations.TransactionType;
 import jakarta.persistence.Entity;
@@ -55,6 +56,11 @@ public class Transaction {
     private Sponsor sponsor;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sponsorship_id")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Sponsorship sponsorship;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "event_id")
     private Event event;
 
@@ -62,4 +68,3 @@ public class Transaction {
     @JoinColumn(name = "budget_id")
     private Budget budget;
 }
-
