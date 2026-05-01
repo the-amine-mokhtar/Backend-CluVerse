@@ -7,7 +7,7 @@ import com.hexaweb.backendcluverse.entities.Notification;
 import com.hexaweb.backendcluverse.entities.recrutement.*;
 import com.hexaweb.backendcluverse.repositories.*;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
-import com.hexaweb.backendcluverse.services.QuestionGeneratorService;
+import com.hexaweb.backendcluverse.services.Recrutement.QuestionGeneratorService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;

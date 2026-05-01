@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.services;
+package com.hexaweb.backendcluverse.services.Recrutement;
 
 import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
 import com.hexaweb.backendcluverse.repositories.InterviewConfigRepository;

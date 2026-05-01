@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.services;
+package com.hexaweb.backendcluverse.services.Recrutement;
 
 import org.springframework.stereotype.Service;
 

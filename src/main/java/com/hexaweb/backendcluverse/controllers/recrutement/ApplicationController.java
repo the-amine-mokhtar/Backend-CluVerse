@@ -2,7 +2,7 @@ package com.hexaweb.backendcluverse.controllers.recrutement;
 
 import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
 import com.hexaweb.backendcluverse.entities.recrutement.Application;
-import com.hexaweb.backendcluverse.services.ApplicationService;
+import com.hexaweb.backendcluverse.services.Recrutement.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

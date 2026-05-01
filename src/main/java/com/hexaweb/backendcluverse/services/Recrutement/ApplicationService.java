@@ -1,10 +1,11 @@
-package com.hexaweb.backendcluverse.services;
+package com.hexaweb.backendcluverse.services.Recrutement;
 
 import com.hexaweb.backendcluverse.entities.recrutement.InterviewConfig;
 import com.hexaweb.backendcluverse.entities.recrutement.Application;
 import com.hexaweb.backendcluverse.enumerations.ApplicationStatus;
 import com.hexaweb.backendcluverse.repositories.ApplicationRepository;
 import com.hexaweb.backendcluverse.repositories.InterviewConfigRepository;
+import com.hexaweb.backendcluverse.services.EntityServiceImpl;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

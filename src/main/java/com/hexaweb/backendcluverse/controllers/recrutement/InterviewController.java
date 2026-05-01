@@ -1,8 +1,8 @@
 package com.hexaweb.backendcluverse.controllers.recrutement;
 
-import com.hexaweb.backendcluverse.services.GroqService;
-import com.hexaweb.backendcluverse.services.InterviewPromptService;
-import com.hexaweb.backendcluverse.services.InterviewSessionService;
+import com.hexaweb.backendcluverse.services.Recrutement.GroqService;
+import com.hexaweb.backendcluverse.services.Recrutement.InterviewPromptService;
+import com.hexaweb.backendcluverse.services.Recrutement.InterviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

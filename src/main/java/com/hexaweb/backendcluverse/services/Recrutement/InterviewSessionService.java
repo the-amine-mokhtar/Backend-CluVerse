@@ -1,4 +1,4 @@
-package com.hexaweb.backendcluverse.services;
+package com.hexaweb.backendcluverse.services.Recrutement;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
