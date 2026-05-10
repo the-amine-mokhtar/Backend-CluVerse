@@ -48,6 +48,7 @@ public class Campaign {
     private String imageUrl;
     private String targetAudience;
     private Integer maxParticipants;
+    private Double budget = 0.0;
 
     // ✅ Boolean (wrapper) → Lombok génère getFeatured() et non isFeatured()
     private Boolean featured = false;
