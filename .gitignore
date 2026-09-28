@@ -37,3 +37,8 @@ build/
 client_secret_107938134137-ir6ppdc3m44iv0oea0ljan57ts1bn081.apps.googleusercontent.com.json
 .envsrc/main/resources/application.properties
 src/main/resources/application.properties
+
+# Local secrets and editor backups
+src/main/resources/application.properties
+src/main/resources/*.properties~
+*.properties~
